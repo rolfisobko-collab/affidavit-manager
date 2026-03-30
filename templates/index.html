@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Affidavit Manager · HPD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Tokens ─────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:    #0f1f3d;
+  --navy2:   #1a3160;
+  --blue:    #2563eb;
+  --blue-h:  #1d4ed8;
+  --gold:    #d97706;
+  --gold-lt: #fbbf24;
+  --bg:      #f1f4fb;
+  --card:    #ffffff;
+  --border:  #e2e8f4;
+  --text:    #1e2d4a;
+  --muted:   #6b7fa8;
+  --danger:  #dc2626;
+  --green:   #16a34a;
+  --r:       14px;
+  --r-sm:    9px;
+  --shadow:  0 1px 12px rgba(15,31,61,.08);
+  --shadow-md: 0 4px 24px rgba(15,31,61,.14);
+  --shadow-lg: 0 12px 48px rgba(15,31,61,.22);
+  --transition: .18s ease;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer}
+a{color:var(--blue);text-decoration:none}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+header{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 16px rgba(0,0,0,.28);
+}
+.header-inner{
+  max-width:1140px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:62px;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-icon{
+  width:38px;height:38px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--gold-lt),var(--gold));
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:19px;box-shadow:0 2px 8px rgba(217,119,6,.4);
+}
+.brand-text{min-width:0}
+.brand-name{color:#fff;font-weight:700;font-size:16px;letter-spacing:-.3px;line-height:1.2}
+.brand-sub{color:rgba(255,255,255,.5);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* Language toggle */
+.lang-toggle{
+  display:flex;background:rgba(255,255,255,.1);border-radius:8px;padding:3px;
+  border:1px solid rgba(255,255,255,.15);
+}
+.lang-btn{
+  padding:5px 10px;border:none;background:transparent;
+  color:rgba(255,255,255,.55);font-size:12px;font-weight:600;
+  border-radius:6px;transition:var(--transition);
+}
+.lang-btn.active{background:rgba(255,255,255,.2);color:#fff}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 18px;border:none;border-radius:var(--r-sm);
+  font-size:14px;font-weight:600;transition:var(--transition);
+  white-space:nowrap;user-select:none;
+}
+.btn svg{flex-shrink:0}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-h);box-shadow:0 4px 16px rgba(37,99,235,.35);transform:translateY(-1px)}
+.btn-primary:active{transform:none;box-shadow:none}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn-danger-soft{background:#fff5f5;color:var(--danger);border:1.5px solid #fecaca}
+.btn-danger-soft:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn-sm{padding:7px 13px;font-size:13px;border-radius:7px}
+.btn-icon{padding:8px;border-radius:8px}
+
+/* ── Container ───────────────────────────────────────────────────────────── */
+.container{max-width:1140px;margin:0 auto;padding:24px 16px}
+
+/* ── Stats ───────────────────────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat-card{
+  background:var(--card);border-radius:var(--r);padding:16px 18px;
+  box-shadow:var(--shadow);border-top:3px solid transparent;
+}
+.stat-card.s-total{border-color:#6366f1}
+.stat-card.s-work {border-color:var(--blue)}
+.stat-card.s-nowork{border-color:var(--gold)}
+.stat-num{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.stat-label{font-size:11px;color:var(--muted);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── Search + toolbar ────────────────────────────────────────────────────── */
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:0;position:relative}
+.search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+#searchInput{
+  width:100%;padding:11px 13px 11px 40px;
+  border:1.5px solid var(--border);border-radius:var(--r-sm);
+  font-size:14px;background:var(--card);color:var(--text);
+  outline:none;transition:var(--transition);
+}
+#searchInput:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+
+/* ── Table card ──────────────────────────────────────────────────────────── */
+.table-card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.table-card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 18px;border-bottom:1px solid var(--border);
+}
+.table-card-title{font-weight:700;font-size:15px}
+.record-count{font-size:13px;color:var(--muted)}
+
+/* Desktop table */
+.desktop-table{width:100%;border-collapse:collapse}
+.desktop-table th{
+  background:#f7f9ff;padding:10px 14px;text-align:left;
+  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.5px;border-bottom:1px solid var(--border);
+}
+.desktop-table td{
+  padding:12px 14px;font-size:13px;border-bottom:1px solid #f3f5fb;
+  vertical-align:middle;
+}
+.desktop-table tr:last-child td{border-bottom:none}
+.desktop-table tr:hover td{background:#f8faff}
+
+/* Mobile cards */
+.mobile-cards{display:none;flex-direction:column}
+.record-card{
+  padding:16px;border-bottom:1px solid var(--border);
+}
+.record-card:last-child{border-bottom:none}
+.record-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.record-card-omo{font-weight:700;font-size:15px;color:var(--text)}
+.record-card-rows{display:flex;flex-direction:column;gap:5px}
+.record-card-row{display:flex;gap:8px;font-size:13px}
+.record-card-key{color:var(--muted);min-width:80px;flex-shrink:0}
+.record-card-val{color:var(--text);font-weight:500}
+.record-card-actions{display:flex;gap:6px;margin-top:12px}
+
+/* Badge */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.4px;
+}
+.badge-work  {background:#eff6ff;color:#1d4ed8}
+.badge-nowork{background:#fffbeb;color:#b45309}
+
+/* Actions */
+.actions{display:flex;gap:6px;align-items:center}
+
+/* Empty */
+.empty-state{text-align:center;padding:56px 20px;color:var(--muted)}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+.empty-state p{font-size:15px}
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(8,15,32,.6);backdrop-filter:blur(6px);
+  z-index:300;overflow-y:auto;padding:16px;
+  align-items:flex-start;justify-content:center;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--card);border-radius:18px;
+  box-shadow:var(--shadow-lg);width:100%;max-width:600px;
+  margin:auto;animation:slideUp .22s ease;
+}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.modal-head{
+  padding:20px 22px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+}
+.modal-title{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.modal-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.btn-close{
+  background:none;border:none;color:var(--muted);padding:4px;
+  border-radius:6px;line-height:1;transition:var(--transition);flex-shrink:0;
+}
+.btn-close:hover{color:var(--text);background:#f0f0f0}
+.modal-body{padding:20px 22px}
+.modal-foot{
+  padding:16px 22px 20px;
+  display:flex;justify-content:flex-end;gap:10px;
+  border-top:1px solid var(--border);
+}
+
+/* ── Form styles ──────────────────────────────────────────────────────────── */
+.doc-type-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.type-option{
+  border:2px solid var(--border);border-radius:12px;
+  padding:14px 16px;cursor:pointer;text-align:center;
+  transition:var(--transition);user-select:none;
+}
+.type-option:hover{border-color:var(--blue);background:#f8faff}
+.type-option.sel-work{border-color:var(--blue);background:#eff6ff}
+.type-option.sel-nowork{border-color:var(--gold);background:#fffbeb}
+.type-option-icon{font-size:26px;margin-bottom:6px}
+.type-option-label{font-size:13px;font-weight:700}
+.type-option-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+.fsection{margin-bottom:20px}
+.fsection-title{
+  font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:11px;padding-bottom:7px;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;
+}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frow.full{grid-template-columns:1fr}
+.frow.three{grid-template-columns:1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:4px}
+label.flabel{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.finput{
+  padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+  font-size:14px;color:var(--text);background:#fff;outline:none;
+  transition:var(--transition);width:100%;
+}
+.finput:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+textarea.finput{resize:vertical;min-height:60px}
+
+/* Work type pills */
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{
+  padding:8px 16px;border:1.5px solid var(--border);border-radius:20px;
+  font-size:13px;font-weight:600;background:#fff;color:var(--muted);
+  transition:var(--transition);
+}
+.pill:hover{border-color:var(--blue);color:var(--blue)}
+.pill.pill-active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* Reason grid */
+.reason-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.reason-card{
+  border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;
+  cursor:pointer;transition:var(--transition);
+}
+.reason-card:hover{border-color:var(--gold)}
+.reason-card.reason-active{border-color:var(--gold);background:#fffbeb}
+.reason-card-num{font-size:13px;font-weight:800;color:var(--text)}
+.reason-card-label{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Conditional */
+.cond{display:none}.cond.show{display:block}
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+#toastZone{position:fixed;bottom:20px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{
+  padding:12px 18px;border-radius:10px;font-size:14px;font-weight:500;
+  box-shadow:var(--shadow-md);animation:toastIn .2s ease;
+  display:flex;align-items:center;gap:8px;max-width:320px;
+}
+.toast-ok {background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.toast-err{background:#fff5f5;color:var(--danger);border:1px solid #fecaca}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+.spin{
+  width:15px;height:15px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:rotate .6s linear infinite;display:inline-block;
+}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:700px){
+  .desktop-table-wrap{display:none}
+  .mobile-cards{display:flex}
+  .stats{grid-template-columns:repeat(3,1fr);gap:8px}
+  .stat-card{padding:12px 13px}
+  .stat-num{font-size:22px}
+  .frow{grid-template-columns:1fr}
+  .frow.three{grid-template-columns:1fr 1fr 1fr}
+  .reason-grid{grid-template-columns:1fr}
+  .brand-sub{display:none}
+  .header-inner{padding:0 14px}
+  .container{padding:16px 12px}
+  .modal{border-radius:14px 14px 0 0;margin:auto 0 0}
+  .overlay{padding:0;align-items:flex-end}
+  @keyframes slideUp{
+    from{opacity:0;transform:translateY(100%)}
+    to{opacity:1;transform:translateY(0)}
+  }
+}
+@media(max-width:400px){
+  .doc-type-picker{grid-template-columns:1fr 1fr}
+  .frow.three{grid-template-columns:1fr 1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">📋</div>
+      <div class="brand-text">
+        <div class="brand-name">Affidavit Manager</div>
+        <div class="brand-sub">HPD · LB and J Construction Inc</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
+        <button class="lang-btn"        id="btnES" onclick="setLang('es')">ES</button>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span data-t="new">New Record</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card s-total">
+      <div class="stat-num" id="statTotal">—</div>
+      <div class="stat-label" data-t="total">Total</div>
+    </div>
+    <div class="stat-card s-work">
+      <div class="stat-num" id="statWork">—</div>
+      <div class="stat-label" data-t="work_done">Work Done</div>
+    </div>
+    <div class="stat-card s-nowork">
+      <div class="stat-num" id="statNoWork">—</div>
+      <div class="stat-label" data-t="no_work">No Work</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="searchInput" type="search" placeholder="Search by OMO#, address, county…" oninput="onSearch()"/>
+    </div>
+  </div>
+
+  <!-- Records -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <span class="table-card-title" data-t="records">Records</span>
+      <span class="record-count" id="recCount"></span>
+    </div>
+    <!-- Desktop -->
+    <div class="desktop-table-wrap">
+      <table class="desktop-table" id="desktopTable">
+        <thead>
+          <tr>
+            <th data-t="th_omo">OMO #</th>
+            <th data-t="th_type">Type</th>
+            <th data-t="th_address">Address</th>
+            <th data-t="th_county">County</th>
+            <th data-t="th_date">HPD Date</th>
+            <th data-t="th_detail">Detail</th>
+            <th data-t="th_actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <!-- Mobile -->
+    <div class="mobile-cards" id="mobileCards"></div>
+    <!-- Empty -->
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="empty-icon">📄</div>
+      <p data-t="no_records">No records yet. Create the first one!</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+<div class="modal" id="modal">
+
+  <div class="modal-head">
+    <div>
+      <div class="modal-title" id="modalTitle" data-t="new_record">New Record</div>
+      <div class="modal-sub" data-t="fill_fields">Fill in the affidavit fields</div>
+    </div>
+    <button class="btn-close" onclick="closeModal()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="modal-body">
+
+    <!-- Doc type -->
+    <div class="doc-type-picker">
+      <div class="type-option sel-work" id="tWork" onclick="setType('work')">
+        <div class="type-option-icon">✅</div>
+        <div class="type-option-label" data-t="type_work">Work Performed</div>
+        <div class="type-option-sub" data-t="type_work_sub">Work was completed</div>
+      </div>
+      <div class="type-option" id="tNoWork" onclick="setType('nowork')">
+        <div class="type-option-icon">🚫</div>
+        <div class="type-option-label" data-t="type_nowork">No Work Performed</div>
+        <div class="type-option-sub" data-t="type_nowork_sub">Could not perform work</div>
+      </div>
+    </div>
+
+    <!-- Basic info -->
+    <div class="fsection">
+      <div class="fsection-title">📌 <span data-t="basic_info">Basic Information</span></div>
+      <div class="frow">
+        <div class="field">
+          <label class="flabel" data-t="lbl_omo">OMO #</label>
+          <input class="finput" id="f_omo" placeholder="e.g. 12345" type="text"/>
+        </div>
+        <div class="field">
+          <label class="flabel" data-t="lbl_county">County</label>
+          <input class="finput" id="f_county" placeholder="e.g. New York" type="text"/>
+        </div>
+      </div>
+      <div class="frow full" style="margin-top:11px">
+        <div class="field">
+          <label class="flabel" data-t="lbl_address">Building Address</label>
+          <input class="finput" id="f_address" placeholder="e.g. 123 Main St, Brooklyn NY" type="text"/>
+        </div>
+      </div>
+      <div class="frow full" style="margin-top:11px">
+        <div class="field">
+          <label class="flabel" data-t="lbl_date">Date Directed by HPD</label>
+          <input class="finput" id="f_date" type="date"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ WORK PERFORMED ═══════════════════════════════════ -->
+    <div class="cond show" id="sec_work">
+      <div class="fsection">
+        <div class="fsection-title">🔧 <span data-t="work_type">Work Type</span></div>
+        <div class="pills" id="workPills">
+          <button class="pill pill-active" data-val="ALL"         onclick="setWorkType('ALL')"        data-t="wt_all">✔ ALL — Complete</button>
+          <button class="pill"             data-val="PARTIAL"     onclick="setWorkType('PARTIAL')"    data-t="wt_partial">⚠ PARTIAL</button>
+          <button class="pill"             data-val="INTERRUPTED" onclick="setWorkType('INTERRUPTED')" data-t="wt_int">⛔ Interrupted</button>
+        </div>
+      </div>
+
+      <!-- ALL -->
+      <div class="cond show fsection" id="sec_all">
+        <div class="fsection-title">📅 <span data-t="work_dates">Work Dates</span></div>
+        <div class="frow">
+          <div class="field">
+            <label class="flabel" data-t="lbl_start">Start Date</label>
+            <input class="finput" id="f_start" type="date"/>
+          </div>
+          <div class="field">
+            <label class="flabel" data-t="lbl_end">Completion Date</label>
+            <input class="finput" id="f_end" type="date"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTIAL -->
+      <div class="cond fsection" id="sec_partial">
+        <div class="fsection-title">⚠ <span data-t="partial_title">Partial Work — Item 7</span></div>
+        <div class="frow full">
+          <div class="field">
+            <label class="flabel" data-t="lbl_preason">Reason for Partial Work</label>
+            <textarea class="finput" id="f_preason" placeholder="Describe the reason…"></textarea>
+          </div>
+        </div>
+        <div class="frow" style="margin-top:10px">
+          <div class="field">
+            <label class="flabel" data-t="lbl_pamount">Charge Amount ($)</label>
+            <input class="finput" id="f_pamount" placeholder="e.g. 850.00" type="text"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERRUPTED -->
+      <div class="cond fsection" id="sec_int">
+        <div class="fsection-title">⛔ <span data-t="int_title">Interrupted — Item 8</span></div>
+        <div class="frow">
+          <div class="field">
+            <label class="flabel" data-t="lbl_iamount">Charge Amount ($)</label>
+            <input class="finput" id="f_iamount" placeholder="e.g. 400.00" type="text"/>
+          </div>
+        </div>
+        <div class="frow full" style="margin-top:10px">
+          <div class="field">
+            <label class="flabel" data-t="lbl_pname">Name of Person Who Prevented Work</label>
+            <input class="finput" id="f_pname" placeholder="Full name" type="text"/>
+          </div>
+        </div>
+        <div class="frow" style="margin-top:10px">
+          <div class="field">
+            <label class="flabel" data-t="lbl_prel">Relationship to Building</label>
+            <input class="finput" id="f_prel" placeholder="e.g. Owner, Tenant" type="text"/>
+          </div>
+          <div class="field">
+            <label class="flabel" data-t="lbl_pdesc">Physical Description</label>
+            <input class="finput" id="f_pdesc" placeholder="e.g. male, tall, dark hair" type="text"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NO WORK PERFORMED ════════════════════════════════ -->
+    <div class="cond fsection" id="sec_nowork">
+      <div class="fsection-title">💰 <span data-t="service_charge_title">Service Charge</span></div>
+      <div class="frow">
+        <div class="field">
+          <label class="flabel" data-t="lbl_scharge">Service Charge ($)</label>
+          <input class="finput" id="f_scharge" placeholder="e.g. 250.00" type="text"/>
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="fsection-title">❓ <span data-t="reason_title">Reason Work Was Not Performed</span></div>
+        <div class="reason-grid" id="reasonGrid">
+          <div class="reason-card" data-val="4" onclick="setReason('4')">
+            <div class="reason-card-num" data-t="r4_num">4 — Physically Inaccessible</div>
+            <div class="reason-card-label" data-t="r4_sub">Area could not be accessed</div>
+          </div>
+          <div class="reason-card" data-val="5" onclick="setReason('5')">
+            <div class="reason-card-num" data-t="r5_num">5 — Work Done by Others</div>
+            <div class="reason-card-label" data-t="r5_sub">Work was already completed</div>
+          </div>
+          <div class="reason-card" data-val="6" onclick="setReason('6')">
+            <div class="reason-card-num" data-t="r6_num">6 — Being Done by Others</div>
+            <div class="reason-card-label" data-t="r6_sub">Another contractor was working</div>
+          </div>
+          <div class="reason-card" data-val="7" onclick="setReason('7')">
+            <div class="reason-card-num" data-t="r7_num">7 — Denied Access</div>
+            <div class="reason-card-label" data-t="r7_sub">Owner / tenant refused entry</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reason 4 -->
+      <div class="cond" id="sec_r4" style="margin-top:16px">
+        <div class="fsection-title">4 — <span data-t="r4_detail">Inaccessible Detail</span></div>
+        <div class="frow full">
+          <div class="field">
+            <label class="flabel" data-t="lbl_ireason">Reason for Inaccessibility</label>
+            <textarea class="finput" id="f_ireason" placeholder="Describe why it was inaccessible…"></textarea>
+          </div>
+        </div>
+        <div class="frow" style="margin-top:10px">
+          <div class="field">
+            <label class="flabel" data-t="lbl_att1">1st Access Attempt</label>
+            <input class="finput" id="f_att1" type="date"/>
+          </div>
+          <div class="field">
+            <label class="flabel" data-t="lbl_att2">2nd Access Attempt</label>
+            <input class="finput" id="f_att2" type="date"/>
+          </div>
+        </div>
+        <div class="frow" style="margin-top:10px">
+          <div class="field">
+            <label class="flabel" data-t="lbl_ph1">1st Phone Contact</label>
+            <input class="finput" id="f_ph1" type="date"/>
+          </div>
+          <div class="field">
+            <label class="flabel" data-t="lbl_ph2">2nd Phone Contact</label>
+            <input class="finput" id="f_ph2" type="date"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reason 5 -->
+      <div class="cond" id="sec_r5" style="margin-top:16px">
+        <div class="fsection-title">5 — <span data-t="r5_detail">Arrival Date</span></div>
+        <div class="frow">
+          <div class="field">
+            <label class="flabel" data-t="lbl_arrival">Date Arrived at Building</label>
+            <input class="finput" id="f_arr5" type="date"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reason 6 -->
+      <div class="cond" id="sec_r6" style="margin-top:16px">
+        <div class="fsection-title">6 — <span data-t="r6_detail">Contractor Detail</span></div>
+        <div class="frow">
+          <div class="field">
+            <label class="flabel" data-t="lbl_arrival">Date Arrived at Building</label>
+            <input class="finput" id="f_arr6" type="date"/>
+          </div>
+          <div class="field">
+            <label class="flabel" data-t="lbl_cname">Contractor Name</label>
+            <input class="finput" id="f_cname" placeholder="Name or 'Refused'" type="text"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reason 7 -->
+      <div class="cond" id="sec_r7" style="margin-top:16px">
+        <div class="fsection-title">7 — <span data-t="r7_detail">Access Denied Detail</span></div>
+        <div class="frow">
+          <div class="field">
+            <label class="flabel" data-t="lbl_arrival">Date Arrived at Building</label>
+            <input class="finput" id="f_arr7" type="date"/>
+          </div>
+          <div class="field">
+            <label class="flabel" data-t="lbl_iphone">Individual Phone</label>
+            <input class="finput" id="f_iphone" placeholder="e.g. 718-555-0000" type="tel"/>
+          </div>
+        </div>
+        <div class="frow" style="margin-top:10px">
+          <div class="field">
+            <label class="flabel" data-t="lbl_iname">Individual Name</label>
+            <input class="finput" id="f_iname" placeholder="Full name" type="text"/>
+          </div>
+          <div class="field">
+            <label class="flabel" data-t="lbl_irel">Relationship to Building</label>
+            <input class="finput" id="f_irel" placeholder="e.g. Owner, Tenant" type="text"/>
+          </div>
+        </div>
+        <div class="frow full" style="margin-top:10px">
+          <div class="field">
+            <label class="flabel" data-t="lbl_idesc">Physical Description</label>
+            <input class="finput" id="f_idesc" placeholder="e.g. male, tall, dark hair" type="text"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NOTARY ════════════════════════════════════════════ -->
+    <div class="fsection">
+      <div class="fsection-title">✍ <span data-t="notary_title">Notary Public — Sworn Date</span></div>
+      <div class="frow three">
+        <div class="field">
+          <label class="flabel" data-t="lbl_day">Day</label>
+          <input class="finput" id="f_day" placeholder="e.g. 15" maxlength="2" type="text"/>
+        </div>
+        <div class="field">
+          <label class="flabel" data-t="lbl_month">Month</label>
+          <input class="finput" id="f_month" placeholder="e.g. March" type="text"/>
+        </div>
+        <div class="field">
+          <label class="flabel" data-t="lbl_year">Year</label>
+          <input class="finput" id="f_year" placeholder="2026" maxlength="4" type="text"/>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /modal-body -->
+
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal()"><span data-t="cancel">Cancel</span></button>
+    <button class="btn btn-primary" id="btnSave" onclick="save()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span data-t="save">Save</span>
+    </button>
+  </div>
+</div>
+</div>
+
+<div id="toastZone"></div>
+
+<script>
+// ── Translations ─────────────────────────────────────────────────────────────
+const T = {
+  en:{
+    new:"New Record", total:"Total", work_done:"Work Done", no_work:"No Work",
+    records:"Records", th_omo:"OMO #", th_type:"Type", th_address:"Address",
+    th_county:"County", th_date:"HPD Date", th_detail:"Detail", th_actions:"Actions",
+    new_record:"New Record", fill_fields:"Fill in the affidavit fields",
+    type_work:"Work Performed", type_work_sub:"Work was completed",
+    type_nowork:"No Work Performed", type_nowork_sub:"Could not perform work",
+    basic_info:"Basic Information", lbl_omo:"OMO #", lbl_county:"County",
+    lbl_address:"Building Address", lbl_date:"Date Directed by HPD",
+    work_type:"Work Type",
+    wt_all:"✔ ALL — Complete", wt_partial:"⚠ PARTIAL", wt_int:"⛔ Interrupted",
+    work_dates:"Work Dates", lbl_start:"Start Date", lbl_end:"Completion Date",
+    partial_title:"Partial Work — Item 7", lbl_preason:"Reason for Partial Work",
+    lbl_pamount:"Charge Amount ($)",
+    int_title:"Interrupted — Item 8", lbl_iamount:"Charge Amount ($)",
+    lbl_pname:"Name of Person Who Prevented Work",
+    lbl_prel:"Relationship to Building", lbl_pdesc:"Physical Description",
+    service_charge_title:"Service Charge", lbl_scharge:"Service Charge ($)",
+    reason_title:"Reason Work Was Not Performed",
+    r4_num:"4 — Physically Inaccessible", r4_sub:"Area could not be accessed",
+    r5_num:"5 — Work Done by Others",     r5_sub:"Work was already completed",
+    r6_num:"6 — Being Done by Others",    r6_sub:"Another contractor was working",
+    r7_num:"7 — Denied Access",           r7_sub:"Owner / tenant refused entry",
+    r4_detail:"Inaccessible Detail", lbl_ireason:"Reason for Inaccessibility",
+    lbl_att1:"1st Access Attempt", lbl_att2:"2nd Access Attempt",
+    lbl_ph1:"1st Phone Contact", lbl_ph2:"2nd Phone Contact",
+    r5_detail:"Arrival Date", r6_detail:"Contractor Detail",
+    lbl_arrival:"Date Arrived at Building", lbl_cname:"Contractor Name",
+    r7_detail:"Access Denied Detail", lbl_iphone:"Individual Phone",
+    lbl_iname:"Individual Name", lbl_irel:"Relationship to Building",
+    lbl_idesc:"Physical Description",
+    notary_title:"Notary Public — Sworn Date",
+    lbl_day:"Day", lbl_month:"Month", lbl_year:"Year",
+    cancel:"Cancel", save:"Save",
+    no_records:"No records yet. Create the first one!",
+    badge_work:"Work", badge_nowork:"No Work",
+    edit_record:"Edit Record",
+    toast_created:"Record created ✓", toast_updated:"Record updated ✓",
+    toast_deleted:"Record deleted", toast_generating:"Generating PDF…",
+    toast_pdf:"PDF downloaded ✓",
+    search_ph:"Search by OMO#, address, county…",
+  },
+  es:{
+    new:"Nuevo Registro", total:"Total", work_done:"Con Trabajo", no_work:"Sin Trabajo",
+    records:"Registros", th_omo:"OMO #", th_type:"Tipo", th_address:"Dirección",
+    th_county:"Condado", th_date:"Fecha HPD", th_detail:"Detalle", th_actions:"Acciones",
+    new_record:"Nuevo Registro", fill_fields:"Completá los campos del affidavit",
+    type_work:"Work Performed", type_work_sub:"Se realizó el trabajo",
+    type_nowork:"No Work Performed", type_nowork_sub:"No se pudo realizar el trabajo",
+    basic_info:"Información Básica", lbl_omo:"OMO #", lbl_county:"Condado",
+    lbl_address:"Dirección del Edificio", lbl_date:"Fecha de Orden HPD",
+    work_type:"Tipo de Trabajo",
+    wt_all:"✔ COMPLETO", wt_partial:"⚠ PARCIAL", wt_int:"⛔ Interrumpido",
+    work_dates:"Fechas del Trabajo", lbl_start:"Fecha Inicio", lbl_end:"Fecha Fin",
+    partial_title:"Trabajo Parcial — Ítem 7", lbl_preason:"Razón del trabajo parcial",
+    lbl_pamount:"Monto a cobrar ($)",
+    int_title:"Interrumpido — Ítem 8", lbl_iamount:"Monto a cobrar ($)",
+    lbl_pname:"Nombre de quien impidió el trabajo",
+    lbl_prel:"Relación con el edificio", lbl_pdesc:"Descripción física",
+    service_charge_title:"Cargo de Servicio", lbl_scharge:"Cargo de servicio ($)",
+    reason_title:"Razón por la que no se realizó",
+    r4_num:"4 — Físicamente Inaccesible", r4_sub:"El área no era accesible",
+    r5_num:"5 — Trabajo ya hecho por otros", r5_sub:"Ya estaba terminado",
+    r6_num:"6 — En progreso por otros",    r6_sub:"Otro contratista estaba trabajando",
+    r7_num:"7 — Acceso Denegado",           r7_sub:"El dueño/inquilino no dejó entrar",
+    r4_detail:"Detalle — Inaccesible", lbl_ireason:"Motivo de inaccesibilidad",
+    lbl_att1:"1° intento de acceso", lbl_att2:"2° intento de acceso",
+    lbl_ph1:"1° contacto telefónico", lbl_ph2:"2° contacto telefónico",
+    r5_detail:"Fecha de llegada", r6_detail:"Detalle — Razón 6",
+    lbl_arrival:"Fecha de llegada al edificio", lbl_cname:"Nombre del contratista",
+    r7_detail:"Detalle — Acceso Denegado", lbl_iphone:"Teléfono del individuo",
+    lbl_iname:"Nombre del individuo", lbl_irel:"Relación con el edificio",
+    lbl_idesc:"Descripción física",
+    notary_title:"Notario Público — Fecha del Juramento",
+    lbl_day:"Día", lbl_month:"Mes", lbl_year:"Año",
+    cancel:"Cancelar", save:"Guardar",
+    no_records:"No hay registros. ¡Creá el primero!",
+    badge_work:"Trabajo", badge_nowork:"Sin Trabajo",
+    edit_record:"Editar Registro",
+    toast_created:"Registro creado ✓", toast_updated:"Registro actualizado ✓",
+    toast_deleted:"Registro eliminado", toast_generating:"Generando PDF…",
+    toast_pdf:"PDF descargado ✓",
+    search_ph:"Buscar por OMO#, dirección, condado…",
+  }
+};
+let lang = localStorage.getItem('afLang') || 'en';
+
+function setLang(l){
+  lang = l;
+  localStorage.setItem('afLang', l);
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnES').classList.toggle('active', l==='es');
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const k = el.dataset.t;
+    if(T[l][k]) el.textContent = T[l][k];
+  });
+  document.getElementById('searchInput').placeholder = T[l]['search_ph'];
+  renderAll();
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let records=[], editId=null, docType='work', workType='ALL', reason=null;
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{ setLang(lang); loadRecords(); });
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(url, method='GET', body=null){
+  const opts={method, headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts);
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||'Error');
+  return d;
+}
+async function loadRecords(q=''){
+  try{
+    records=await api(`/api/records?q=${encodeURIComponent(q)}`);
+    renderAll();
+  }catch(e){toast(e.message,'err')}
+}
+
+function renderAll(){
+  updateStats();
+  renderDesktop();
+  renderMobile();
+}
+
+function updateStats(){
+  const w=records.filter(r=>r.doc_type==='work').length;
+  const nw=records.filter(r=>r.doc_type==='nowork').length;
+  document.getElementById('statTotal').textContent=records.length;
+  document.getElementById('statWork').textContent=w;
+  document.getElementById('statNoWork').textContent=nw;
+  document.getElementById('recCount').textContent=records.length?`${records.length} record${records.length!==1?'s':''}`:''
+}
+
+function fmtDate(s){
+  if(!s) return '—';
+  const d=new Date(s+'T00:00:00');
+  if(isNaN(d)) return s;
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':s||'—'}
+
+function badgeWork(type){
+  if(type==='work')   return `<span class="badge badge-work">✔ ${T[lang].badge_work}</span>`;
+  return `<span class="badge badge-nowork">✗ ${T[lang].badge_nowork}</span>`;
+}
+function detailStr(r){
+  if(r.doc_type==='work') return r.work_type||'—';
+  return r.nowork_reason ? `Reason ${r.nowork_reason}` : '—';
+}
+
+function renderDesktop(){
+  const empty=document.getElementById('emptyState');
+  const tbody=document.getElementById('tableBody');
+  if(!records.length){empty.style.display='block';tbody.innerHTML='';return}
+  empty.style.display='none';
+  tbody.innerHTML=records.map(r=>`
+    <tr>
+      <td><strong>${r.omo_number||'—'}</strong></td>
+      <td>${badgeWork(r.doc_type)}</td>
+      <td>${trunc(r.building_address,34)}</td>
+      <td>${r.county||'—'}</td>
+      <td>${fmtDate(r.date_directed)}</td>
+      <td>${detailStr(r)}</td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-success btn-sm btn-icon" onclick="dlPdf(${r.id})" title="Download PDF">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="editRecord(${r.id})" title="${T[lang].edit_record}">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-danger-soft btn-sm btn-icon" onclick="delRecord(${r.id})" title="Delete">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderMobile(){
+  const el=document.getElementById('mobileCards');
+  const empty=document.getElementById('emptyState');
+  if(!records.length){empty.style.display='block';el.innerHTML='';return}
+  empty.style.display='none';
+  el.innerHTML=records.map(r=>`
+    <div class="record-card">
+      <div class="record-card-top">
+        <div>
+          <div class="record-card-omo">${r.omo_number||'—'}</div>
+          <div style="margin-top:4px">${badgeWork(r.doc_type)}</div>
+        </div>
+        <div class="record-card-actions">
+          <button class="btn btn-success btn-sm" onclick="dlPdf(${r.id})">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            PDF
+          </button>
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="editRecord(${r.id})">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-danger-soft btn-sm btn-icon" onclick="delRecord(${r.id})">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="record-card-rows">
+        <div class="record-card-row"><span class="record-card-key">${T[lang].th_address}</span><span class="record-card-val">${trunc(r.building_address,36)}</span></div>
+        <div class="record-card-row"><span class="record-card-key">${T[lang].th_county}</span><span class="record-card-val">${r.county||'—'}</span></div>
+        <div class="record-card-row"><span class="record-card-key">${T[lang].th_date}</span><span class="record-card-val">${fmtDate(r.date_directed)}</span></div>
+        <div class="record-card-row"><span class="record-card-key">${T[lang].th_detail}</span><span class="record-card-val">${detailStr(r)}</span></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+let searchTmr;
+function onSearch(){
+  clearTimeout(searchTmr);
+  searchTmr=setTimeout(()=>loadRecords(document.getElementById('searchInput').value),260);
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(rec=null){
+  editId=rec?rec.id:null;
+  const title=document.getElementById('modalTitle');
+  title.textContent=rec?T[lang].edit_record:T[lang].new_record;
+  resetForm();
+  if(rec) populateForm(rec);
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  // apply lang
+  setLang(lang);
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function overlayClick(e){if(e.target===document.getElementById('overlay'))closeModal()}
+
+function resetForm(){
+  const ids=['f_omo','f_county','f_address','f_date','f_start','f_end',
+    'f_preason','f_pamount','f_iamount','f_pname','f_prel','f_pdesc',
+    'f_scharge','f_ireason','f_att1','f_att2','f_ph1','f_ph2',
+    'f_arr5','f_arr6','f_arr7','f_cname','f_iname','f_irel','f_idesc','f_iphone',
+    'f_day','f_month','f_year'];
+  ids.forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  setType('work'); setWorkType('ALL'); setReason(null);
+}
+
+function populateForm(r){
+  setType(r.doc_type||'work');
+  setWorkType(r.work_type||'ALL');
+  if(r.nowork_reason) setReason(r.nowork_reason);
+  const s=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v};
+  s('f_omo',r.omo_number); s('f_county',r.county);
+  s('f_address',r.building_address); s('f_date',r.date_directed);
+  s('f_start',r.work_start_date); s('f_end',r.work_end_date);
+  s('f_preason',r.partial_reason); s('f_pamount',r.partial_amount);
+  s('f_iamount',r.interrupted_amount);
+  s('f_pname',r.prevented_name); s('f_prel',r.prevented_rel); s('f_pdesc',r.prevented_desc);
+  s('f_scharge',r.service_charge);
+  s('f_ireason',r.inacc_reason);
+  s('f_att1',r.attempt_date1); s('f_att2',r.attempt_date2);
+  s('f_ph1',r.phone_date1); s('f_ph2',r.phone_date2);
+  s('f_cname',r.contractor_name);
+  s('f_iname',r.individual_name); s('f_irel',r.individual_rel);
+  s('f_idesc',r.individual_desc); s('f_iphone',r.individual_phone);
+  s('f_day',r.sworn_day); s('f_month',r.sworn_month); s('f_year',r.sworn_year);
+  if(r.arrival_date){
+    ['5','6','7'].forEach(n=>{const e=document.getElementById('f_arr'+n);if(e)e.value=r.arrival_date});
+  }
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+async function save(){
+  const btn=document.getElementById('btnSave');
+  btn.disabled=true;
+  btn.innerHTML=`<span class="spin"></span> <span data-t="save">${T[lang].save}…</span>`;
+
+  const g=id=>(document.getElementById(id)||{}).value||'';
+  let arrival='';
+  if(docType==='nowork'){
+    if(reason==='5') arrival=g('f_arr5');
+    else if(reason==='6') arrival=g('f_arr6');
+    else if(reason==='7') arrival=g('f_arr7');
+  }
+
+  const data={
+    doc_type:docType, omo_number:g('f_omo'), county:g('f_county'),
+    building_address:g('f_address'), date_directed:g('f_date'),
+    work_type:docType==='work'?workType:'',
+    work_start_date:g('f_start'), work_end_date:g('f_end'),
+    partial_reason:g('f_preason'), partial_amount:g('f_pamount'),
+    interrupted_amount:g('f_iamount'),
+    prevented_name:g('f_pname'), prevented_rel:g('f_prel'), prevented_desc:g('f_pdesc'),
+    service_charge:g('f_scharge'),
+    nowork_reason:docType==='nowork'?(reason||''):'',
+    inacc_reason:g('f_ireason'),
+    attempt_date1:g('f_att1'), attempt_date2:g('f_att2'),
+    phone_date1:g('f_ph1'), phone_date2:g('f_ph2'),
+    arrival_date:arrival,
+    contractor_name:g('f_cname'),
+    individual_name:g('f_iname'), individual_rel:g('f_irel'),
+    individual_desc:g('f_idesc'), individual_phone:g('f_iphone'),
+    sworn_day:g('f_day'), sworn_month:g('f_month'), sworn_year:g('f_year'),
+  };
+
+  try{
+    if(editId){
+      await api(`/api/records/${editId}`,'PUT',data);
+      toast(T[lang].toast_updated,'ok');
+    } else {
+      await api('/api/records','POST',data);
+      toast(T[lang].toast_created,'ok');
+    }
+    closeModal();
+    loadRecords(document.getElementById('searchInput').value);
+  }catch(e){toast(e.message,'err')}
+  finally{
+    btn.disabled=false;
+    btn.innerHTML=`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span data-t="save">${T[lang].save}</span>`;
+  }
+}
+
+// ── Edit / Delete ─────────────────────────────────────────────────────────────
+async function editRecord(id){
+  try{const r=await api(`/api/records/${id}`);openModal(r)}catch(e){toast(e.message,'err')}
+}
+async function delRecord(id){
+  if(!confirm(lang==='es'?'¿Eliminar este registro?':'Delete this record?')) return;
+  try{
+    await api(`/api/records/${id}`,'DELETE');
+    toast(T[lang].toast_deleted,'ok');
+    loadRecords(document.getElementById('searchInput').value);
+  }catch(e){toast(e.message,'err')}
+}
+
+// ── PDF Download ──────────────────────────────────────────────────────────────
+async function dlPdf(id){
+  toast(T[lang].toast_generating,'ok');
+  try{
+    const res=await fetch(`/api/records/${id}/pdf`);
+    if(!res.ok){toast('Error generating PDF','err');return}
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    const cd=res.headers.get('Content-Disposition')||'';
+    a.download=cd.split('filename=')[1]?.replace(/"/g,'')||`affidavit_${id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(T[lang].toast_pdf,'ok');
+  }catch(e){toast(e.message,'err')}
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setType(t){
+  docType=t;
+  document.getElementById('tWork').className   =`type-option${t==='work'?' sel-work':''}`;
+  document.getElementById('tNoWork').className =`type-option${t==='nowork'?' sel-nowork':''}`;
+  tog('sec_work',  t==='work');
+  tog('sec_nowork',t==='nowork');
+}
+function setWorkType(wt){
+  workType=wt;
+  document.querySelectorAll('#workPills .pill').forEach(p=>
+    p.classList.toggle('pill-active',p.dataset.val===wt));
+  tog('sec_all',    wt==='ALL');
+  tog('sec_partial',wt==='PARTIAL');
+  tog('sec_int',    wt==='INTERRUPTED');
+}
+function setReason(r){
+  reason=r;
+  document.querySelectorAll('#reasonGrid .reason-card').forEach(c=>
+    c.classList.toggle('reason-active',c.dataset.val===r));
+  ['4','5','6','7'].forEach(n=>tog('sec_r'+n, r===n));
+}
+function tog(id,show){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('show',show);
+  if(!show) el.classList.remove('show');
+  else el.classList.add('show');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg,type='ok'){
+  const c=document.getElementById('toastZone');
+  const t=document.createElement('div');
+  t.className=`toast toast-${type}`;
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+</script>
+</body>
+</html>
