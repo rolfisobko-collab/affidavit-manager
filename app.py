@@ -1,24 +1,16 @@
 """
 Affidavit Manager — Flask Backend
-CRUD completo + generación de PDFs sobre los templates originales.
-
-Base de datos:
-  - Producción (Render): PostgreSQL via DATABASE_URL env var
-  - Local:               SQLite (records.db)
+CRUD + generación de Affidavit (Work/NoWork) + Invoice.
+Soporta PostgreSQL (DATABASE_URL env) y SQLite (local).
 """
 
 import os
-import json
 from flask import Flask, request, jsonify, send_file, render_template
 from datetime import datetime, timezone
 
-from pdf_filler import generate_pdf
-
-# ─── Configuración de base de datos ───────────────────────────────────────────
+from pdf_filler import generate_pdfs
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
-
-# Render a veces devuelve "postgres://..." que psycopg2 no acepta — fix:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
@@ -37,67 +29,60 @@ app = Flask(__name__)
 app.config["JSON_ENSURE_ASCII"] = False
 
 
-# ─── Abstracción de conexión ──────────────────────────────────────────────────
+# ─── DB helpers ───────────────────────────────────────────────────────────────
 
 def get_connection():
-    """Devuelve una conexión a PostgreSQL o SQLite según el entorno."""
     if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
-        return conn
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return psycopg2.connect(DATABASE_URL)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-
-def placeholder(n=1):
-    """Placeholder de parámetro correcto según el driver."""
+def ph():
     return "%s" if USE_POSTGRES else "?"
 
+def phs(cols):
+    return ", ".join([ph()] * len(cols))
 
-def placeholders(cols):
-    """Lista de placeholders para una lista de columnas."""
-    p = placeholder()
-    return ", ".join([p] * len(cols))
-
-
-def row_to_dict(row):
-    """Convierte una fila de cualquier driver a dict."""
-    if row is None:
-        return None
+def fetchall(cur):
+    rows = cur.fetchall()
     if USE_POSTGRES:
-        return dict(row)
-    return dict(row)
-
-
-def fetchall(cursor):
-    rows = cursor.fetchall()
-    if USE_POSTGRES:
-        cols = [d[0] for d in cursor.description]
+        cols = [d[0] for d in cur.description]
         return [dict(zip(cols, r)) for r in rows]
     return [dict(r) for r in rows]
 
-
-def fetchone(cursor):
-    row = cursor.fetchone()
-    if row is None:
+def fetchone(cur):
+    row = cur.fetchone()
+    if not row:
         return None
     if USE_POSTGRES:
-        cols = [d[0] for d in cursor.description]
+        cols = [d[0] for d in cur.description]
         return dict(zip(cols, row))
     return dict(row)
+
+def serialize(rec):
+    """Convierte timestamps a string para JSON."""
+    if rec:
+        for k in ("created_at", "updated_at"):
+            if rec.get(k) and not isinstance(rec[k], str):
+                rec[k] = rec[k].isoformat()
+    return rec
 
 
 # ─── Schema ───────────────────────────────────────────────────────────────────
 
-SCHEMA_SQLITE = """
+SCHEMA = """
 CREATE TABLE IF NOT EXISTS records (
-    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
-    doc_type             TEXT    NOT NULL DEFAULT 'work',
+    id                   {pk},
+    doc_type             TEXT NOT NULL DEFAULT 'work',
+
+    -- Campos comunes
     omo_number           TEXT,
     county               TEXT,
     building_address     TEXT,
     date_directed        TEXT,
+
+    -- WORK PERFORMED
     work_type            TEXT,
     work_start_date      TEXT,
     work_end_date        TEXT,
@@ -107,6 +92,8 @@ CREATE TABLE IF NOT EXISTS records (
     prevented_name       TEXT,
     prevented_rel        TEXT,
     prevented_desc       TEXT,
+
+    -- NO WORK PERFORMED
     service_charge       TEXT,
     nowork_reason        TEXT,
     inacc_reason         TEXT,
@@ -120,59 +107,78 @@ CREATE TABLE IF NOT EXISTS records (
     individual_rel       TEXT,
     individual_desc      TEXT,
     individual_phone     TEXT,
+
+    -- INVOICE
+    invoice_number       TEXT,
+    invoice_date         TEXT,
+    trade                TEXT,
+    borough              TEXT,
+    work_location_apt    TEXT,
+    rc_number            TEXT,
+    inv_desc1            TEXT,
+    inv_desc2            TEXT,
+    inv_desc3            TEXT,
+    inv_desc4            TEXT,
+    inv_desc5            TEXT,
+    inv_desc6            TEXT,
+    inv_mat1             TEXT,
+    inv_mat2             TEXT,
+    inv_mat3             TEXT,
+    inv_mat4             TEXT,
+    inv_mat5             TEXT,
+    inv_mat6             TEXT,
+    inv_qty1             TEXT,
+    inv_qty2             TEXT,
+    inv_qty3             TEXT,
+    inv_qty4             TEXT,
+    inv_qty5             TEXT,
+    inv_qty6             TEXT,
+    bid_amount           TEXT,
+    total_charge         TEXT,
+
+    -- Notario
     sworn_day            TEXT,
     sworn_month          TEXT,
     sworn_year           TEXT,
-    created_at           TEXT DEFAULT (datetime('now')),
-    updated_at           TEXT DEFAULT (datetime('now'))
+
+    created_at           {ts_default},
+    updated_at           {ts_default}
 )
 """
 
-SCHEMA_POSTGRES = """
-CREATE TABLE IF NOT EXISTS records (
-    id                   SERIAL PRIMARY KEY,
-    doc_type             TEXT    NOT NULL DEFAULT 'work',
-    omo_number           TEXT,
-    county               TEXT,
-    building_address     TEXT,
-    date_directed        TEXT,
-    work_type            TEXT,
-    work_start_date      TEXT,
-    work_end_date        TEXT,
-    partial_reason       TEXT,
-    partial_amount       TEXT,
-    interrupted_amount   TEXT,
-    prevented_name       TEXT,
-    prevented_rel        TEXT,
-    prevented_desc       TEXT,
-    service_charge       TEXT,
-    nowork_reason        TEXT,
-    inacc_reason         TEXT,
-    attempt_date1        TEXT,
-    attempt_date2        TEXT,
-    phone_date1          TEXT,
-    phone_date2          TEXT,
-    arrival_date         TEXT,
-    contractor_name      TEXT,
-    individual_name      TEXT,
-    individual_rel       TEXT,
-    individual_desc      TEXT,
-    individual_phone     TEXT,
-    sworn_day            TEXT,
-    sworn_month          TEXT,
-    sworn_year           TEXT,
-    created_at           TIMESTAMP DEFAULT NOW(),
-    updated_at           TIMESTAMP DEFAULT NOW()
+SCHEMA_SQLITE  = SCHEMA.format(
+    pk="INTEGER PRIMARY KEY AUTOINCREMENT",
+    ts_default="TEXT DEFAULT (datetime('now'))"
 )
-"""
+SCHEMA_POSTGRES = SCHEMA.format(
+    pk="SERIAL PRIMARY KEY",
+    ts_default="TIMESTAMP DEFAULT NOW()"
+)
 
+# Migración: columnas nuevas para DBs existentes
+MIGRATION_COLS = [
+    ("invoice_number", "TEXT"), ("invoice_date", "TEXT"), ("trade", "TEXT"),
+    ("borough", "TEXT"), ("work_location_apt", "TEXT"), ("rc_number", "TEXT"),
+    ("inv_desc1", "TEXT"), ("inv_desc2", "TEXT"), ("inv_desc3", "TEXT"),
+    ("inv_desc4", "TEXT"), ("inv_desc5", "TEXT"), ("inv_desc6", "TEXT"),
+    ("inv_mat1", "TEXT"), ("inv_mat2", "TEXT"), ("inv_mat3", "TEXT"),
+    ("inv_mat4", "TEXT"), ("inv_mat5", "TEXT"), ("inv_mat6", "TEXT"),
+    ("inv_qty1", "TEXT"), ("inv_qty2", "TEXT"), ("inv_qty3", "TEXT"),
+    ("inv_qty4", "TEXT"), ("inv_qty5", "TEXT"), ("inv_qty6", "TEXT"),
+    ("bid_amount", "TEXT"), ("total_charge", "TEXT"),
+]
 
 def init_db():
     conn = get_connection()
     try:
         cur = conn.cursor()
-        schema = SCHEMA_POSTGRES if USE_POSTGRES else SCHEMA_SQLITE
-        cur.execute(schema)
+        cur.execute(SCHEMA_POSTGRES if USE_POSTGRES else SCHEMA_SQLITE)
+        # Agregar columnas nuevas si ya existía la tabla (migración)
+        for col, typ in MIGRATION_COLS:
+            try:
+                cur.execute(f"ALTER TABLE records ADD COLUMN {col} {typ}")
+            except Exception:
+                pass  # Ya existe
         conn.commit()
     finally:
         conn.close()
@@ -185,11 +191,18 @@ COLUMNS = [
     "prevented_desc", "service_charge", "nowork_reason", "inacc_reason",
     "attempt_date1", "attempt_date2", "phone_date1", "phone_date2",
     "arrival_date", "contractor_name", "individual_name", "individual_rel",
-    "individual_desc", "individual_phone", "sworn_day", "sworn_month", "sworn_year",
+    "individual_desc", "individual_phone",
+    "invoice_number", "invoice_date", "trade", "borough", "work_location_apt",
+    "rc_number",
+    "inv_desc1", "inv_desc2", "inv_desc3", "inv_desc4", "inv_desc5", "inv_desc6",
+    "inv_mat1", "inv_mat2", "inv_mat3", "inv_mat4", "inv_mat5", "inv_mat6",
+    "inv_qty1", "inv_qty2", "inv_qty3", "inv_qty4", "inv_qty5", "inv_qty6",
+    "bid_amount", "total_charge",
+    "sworn_day", "sworn_month", "sworn_year",
 ]
 
 
-# ─── Rutas API ────────────────────────────────────────────────────────────────
+# ─── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -203,26 +216,15 @@ def list_records():
     try:
         cur = conn.cursor()
         cur.execute("SELECT * FROM records ORDER BY id DESC")
-        records = fetchall(cur)
+        records = [serialize(r) for r in fetchall(cur)]
     finally:
         conn.close()
 
     if q:
-        filtered = []
-        for rec in records:
-            haystack = " ".join(
-                str(v).lower() for v in rec.values() if v is not None
-            )
-            if q in haystack:
-                filtered.append(rec)
-        records = filtered
-
-    # Convertir timestamps a string para JSON
-    for rec in records:
-        for k in ("created_at", "updated_at"):
-            if rec.get(k) and not isinstance(rec[k], str):
-                rec[k] = rec[k].isoformat()
-
+        records = [
+            r for r in records
+            if q in " ".join(str(v).lower() for v in r.values() if v)
+        ]
     return jsonify(records)
 
 
@@ -234,30 +236,22 @@ def create_record():
         cur  = conn.cursor()
         cols = [c for c in COLUMNS if c in data]
         vals = [data[c] for c in cols]
-        ph   = placeholders(cols)
-        col_names = ", ".join(cols)
 
         if USE_POSTGRES:
             cur.execute(
-                f"INSERT INTO records ({col_names}) VALUES ({ph}) RETURNING id",
+                f"INSERT INTO records ({', '.join(cols)}) VALUES ({phs(cols)}) RETURNING id",
                 vals,
             )
             new_id = cur.fetchone()[0]
         else:
-            cur.execute(f"INSERT INTO records ({col_names}) VALUES ({ph})", vals)
+            cur.execute(f"INSERT INTO records ({', '.join(cols)}) VALUES ({phs(cols)})", vals)
             new_id = cur.lastrowid
 
         conn.commit()
-        cur.execute(f"SELECT * FROM records WHERE id = {placeholder()}", (new_id,))
-        row = fetchone(cur)
+        cur.execute(f"SELECT * FROM records WHERE id = {ph()}", (new_id,))
+        row = serialize(fetchone(cur))
     finally:
         conn.close()
-
-    if row:
-        for k in ("created_at", "updated_at"):
-            if row.get(k) and not isinstance(row[k], str):
-                row[k] = row[k].isoformat()
-
     return jsonify(row), 201
 
 
@@ -266,19 +260,11 @@ def get_record(rec_id):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute(f"SELECT * FROM records WHERE id = {placeholder()}", (rec_id,))
-        row = fetchone(cur)
+        cur.execute(f"SELECT * FROM records WHERE id = {ph()}", (rec_id,))
+        row = serialize(fetchone(cur))
     finally:
         conn.close()
-
-    if not row:
-        return jsonify({"error": "Not found"}), 404
-
-    for k in ("created_at", "updated_at"):
-        if row.get(k) and not isinstance(row[k], str):
-            row[k] = row[k].isoformat()
-
-    return jsonify(row)
+    return (jsonify(row) if row else jsonify({"error": "Not found"})), (200 if row else 404)
 
 
 @app.route("/api/records/<int:rec_id>", methods=["PUT"])
@@ -287,31 +273,21 @@ def update_record(rec_id):
     conn = get_connection()
     try:
         cur = conn.cursor()
-
-        cur.execute(f"SELECT id FROM records WHERE id = {placeholder()}", (rec_id,))
+        cur.execute(f"SELECT id FROM records WHERE id = {ph()}", (rec_id,))
         if not cur.fetchone():
             return jsonify({"error": "Not found"}), 404
 
         updates = {c: data[c] for c in COLUMNS if c in data}
         updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-
-        p = placeholder()
-        set_clause = ", ".join(f"{k} = {p}" for k in updates)
+        set_clause = ", ".join(f"{k} = {ph()}" for k in updates)
         vals = list(updates.values()) + [rec_id]
 
-        cur.execute(f"UPDATE records SET {set_clause} WHERE id = {p}", vals)
+        cur.execute(f"UPDATE records SET {set_clause} WHERE id = {ph()}", vals)
         conn.commit()
-
-        cur.execute(f"SELECT * FROM records WHERE id = {placeholder()}", (rec_id,))
-        row = fetchone(cur)
+        cur.execute(f"SELECT * FROM records WHERE id = {ph()}", (rec_id,))
+        row = serialize(fetchone(cur))
     finally:
         conn.close()
-
-    if row:
-        for k in ("created_at", "updated_at"):
-            if row.get(k) and not isinstance(row[k], str):
-                row[k] = row[k].isoformat()
-
     return jsonify(row)
 
 
@@ -320,19 +296,20 @@ def delete_record(rec_id):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute(f"DELETE FROM records WHERE id = {placeholder()}", (rec_id,))
+        cur.execute(f"DELETE FROM records WHERE id = {ph()}", (rec_id,))
         conn.commit()
     finally:
         conn.close()
     return jsonify({"ok": True})
 
 
-@app.route("/api/records/<int:rec_id>/pdf")
-def download_pdf(rec_id):
+@app.route("/api/records/<int:rec_id>/pdf/<doc>")
+def download_pdf(rec_id, doc):
+    """doc = 'affidavit' | 'invoice' | 'zip'"""
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute(f"SELECT * FROM records WHERE id = {placeholder()}", (rec_id,))
+        cur.execute(f"SELECT * FROM records WHERE id = {ph()}", (rec_id,))
         row = fetchone(cur)
     finally:
         conn.close()
@@ -340,13 +317,14 @@ def download_pdf(rec_id):
     if not row:
         return jsonify({"error": "Not found"}), 404
 
-    output_path = generate_pdf(row)
-    return send_file(
-        output_path,
-        as_attachment=True,
-        download_name=os.path.basename(output_path),
-        mimetype="application/pdf",
-    )
+    paths = generate_pdfs(row)
+    path  = paths.get(doc)
+    if not path or not os.path.exists(path):
+        return jsonify({"error": "Doc not found"}), 404
+
+    mime = "application/zip" if doc == "zip" else "application/pdf"
+    return send_file(path, as_attachment=True,
+                     download_name=os.path.basename(path), mimetype=mime)
 
 
 # ─── Inicio ───────────────────────────────────────────────────────────────────
@@ -356,6 +334,6 @@ with app.app_context():
 
 if __name__ == "__main__":
     print("=" * 50)
-    print("  Affidavit Manager en http://localhost:8080")
+    print("  Affidavit Manager → http://localhost:8080")
     print("=" * 50)
     app.run(debug=True, port=8080)

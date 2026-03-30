@@ -1,229 +1,285 @@
 """
-PDF Filler - Escribe sobre los templates de affidavit existentes.
-Coordenadas en el espacio del PDF (2480 x 3508 unidades, A4 a 300 DPI).
-
-Para ajustar posiciones: cada campo tiene (x, y) donde (0,0) es esquina superior izquierda.
-Modificar los valores en WORK_FIELDS y NOWORK_FIELDS si el texto aparece desplazado.
+PDF Filler — rellena los affidavits y la invoice usando campos de formulario reales.
+Los nuevos templates (Rev. 03.10.2025) son PDFs fillables, no scaneados,
+por lo que la precisión es perfecta sin necesidad de coordenadas manuales.
 """
 
 import fitz  # PyMuPDF
 import os
-import shutil
+import zipfile
 from datetime import datetime
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-WORK_TEMPLATE   = os.path.join(BASE_DIR, "pdfs", "work_template.pdf")
-NOWORK_TEMPLATE = os.path.join(BASE_DIR, "pdfs", "nowork_template.pdf")
-OUTPUT_DIR      = os.path.join(BASE_DIR, "output")
+BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
+WORK_TEMPLATE  = os.path.join(BASE_DIR, "pdfs", "work_template.pdf")
+NOWORK_TEMPLATE= os.path.join(BASE_DIR, "pdfs", "nowork_template.pdf")
+INVOICE_TEMPLATE = os.path.join(BASE_DIR, "pdfs", "invoice_template.pdf")
+OUTPUT_DIR     = os.path.join(BASE_DIR, "output")
 
-# Fuente y tamaño de texto para rellenar los blancos
-# En este PDF, 1 unidad ≈ 1/300 pulgada. 12pt estándar ≈ 50 unidades.
-FONT      = "helv"
-FONT_SIZE = 42
-COLOR     = (0, 0, 0)  # Negro
+# County → Borough mapping
+COUNTY_BOROUGH = {
+    "kings":    "Brooklyn",
+    "new york": "Manhattan",
+    "bronx":    "Bronx",
+    "queens":   "Queens",
+    "richmond": "Staten Island",
+}
 
-# ─────────────────────────────────────────────────────────────────────────────
-# WORK PERFORMED AFFIDAVIT  —  coordenadas por campo
-# Calibradas usando marcadores cada 50 unidades sobre el PDF (2480 x 3508 pts)
-# Formato: { nombre: (page_idx, x, y) }   y = baseline del texto
-# ─────────────────────────────────────────────────────────────────────────────
+# ─── Mapeados de campos ────────────────────────────────────────────────────────
+#
+# Cada campo tiene nombre (field_name en el PDF) e índice (para campos duplicados).
+# Los campos con nombre '1' (OMO#) existen en múltiples páginas — al settear
+# uno se sincronizan todos automáticamente por la spec de PDF.
+
 WORK_FIELDS = {
-    # ── Página 1 (índice 0) ──────────────────────────────────────────────────
-    "omo_header":        (0,  960, 490),   # OMO # en el encabezado (blank line)
-    "county":            (0,  500, 740),   # County of ___ (blank after "COUNTY OF ")
-    "date_directed":     (0,  490, 1240),  # "That on [fecha] I was directed..."
-    "building_address":  (0,  190, 1340),  # dirección del edificio (línea completa)
-    "omo_item3":         (0,  380, 1615),  # OMO # en "# ___" segunda línea ítem 3
-
-    "work_start_date":   (0, 1510, 2315),  # "beginning on [fecha]"  (fin de línea)
-    "work_end_date":     (0,  575, 2390),  # "and completed on [fecha]"  (inicio de línea)
-
-    "partial_reason":    (0,  285, 2580),  # blank line debajo de "due to"  (ítem 7)
-    "partial_amount":    (0, 1360, 2715),  # "$___" monto ítem 7
-    "interrupted_amount":(0,  330, 2968),  # "$___" monto ítem 8 — después del "$" en la última línea
-
-    # ── Página 2 (índice 1) ──────────────────────────────────────────────────
-    "omo_p2":            (1, 1150, 240),   # OMO # encabezado pág 2 (after "OMO # ")
-    "prevented_name":    (1,  920, 548),   # nombre de quien impidió — después de "name as: "
-    "prevented_rel":     (1,  495, 620),   # relación con el edificio — después de "as: "
-    "prevented_desc":    (1,  975, 732),   # descripción física — después de "Description of individual "
-    "sworn_day":         (1,  580, 1178),  # día ante notario
-    "sworn_month":       (1,  718, 1178),  # mes ante notario
-    "sworn_year":        (1, 1050, 1178),  # 2 últimos dígitos del año (el "20" ya está impreso)
+    # nombre_en_record  : (nombre_campo_pdf, índice_si_duplicado)
+    "omo_number"        : "1",     # header pág 1, ítem 3 y header pág 2 (mismo nombre → sync)
+    "county"            : "2",
+    "date_directed"     : "4",
+    "building_address"  : "5",
+    "work_start_date"   : "6",     # "beginning on ___"
+    "work_end_date"     : "7",     # "completed on ___"
+    "partial_reason"    : "8",
+    "partial_amount"    : "9",
+    "interrupted_amount": "10",
+    "prevented_name"    : "11",    # pág 2 — quien impidió
+    "prevented_rel"     : "13",    # "as: ___"
+    "prevented_desc"    : "14",
+    "sworn_day"         : "19",
+    "sworn_month"       : "21",
+    "sworn_year"        : "22",    # solo 2 dígitos (el "20" ya está impreso)
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# NO WORK PERFORMED AFFIDAVIT  —  coordenadas por campo
-# ─────────────────────────────────────────────────────────────────────────────
 NOWORK_FIELDS = {
-    # ── Página 1 (índice 0) ──────────────────────────────────────────────────
-    "omo_header":        (0,  960, 448),   # OMO # encabezado
-    "county":            (0,  500, 682),   # County of ___
-    "omo_item2":         (0, 1720, 1250),  # OMO # en "...OMO # ___" (fin de línea 1)
-    "building_address":  (0, 1230, 1310),  # dirección — blank después de "to go to the building located at "
-    "service_charge":    (0, 1400, 1524),  # "$___" cargo servicio ítem 3
-
-    # Razón 4 – físicamente inaccesible
-    "inacc_reason":      (0,  285, 1898),  # blank line de inaccesibilidad
-    "attempt_date1":     (0, 1658, 2092),  # "access on ___"  (fin de línea)
-    "attempt_date2":     (0,  378, 2158),  # "and ___"         (inicio de línea)
-    "phone_date1":       (0, 1658, 2158),  # "telephone on ___" (fin de la misma línea)
-    "phone_date2":       (0,  378, 2225),  # "and ___"          (inicio de línea 3)
-
-    # Razón 5 – trabajo ya completado por otros
-    "arrival_5":         (0, 1300, 2400),  # "work site on ___" ítem 5
-
-    # Razón 6 – trabajo siendo ejecutado por otros
-    "arrival_6":         (0, 1300, 2548),  # "work site on ___" ítem 6
-    "contractor_name":   (0, 1618, 2682),  # "name as: ___"  ítem 6a
-
-    # ── Página 2 (índice 1) ──────────────────────────────────────────────────
-    "omo_p2":            (1, 1150, 268),   # OMO # encabezado pág 2 (after "OMO # ")
-
-    # Razón 7 – acceso denegado
-    "arrival_7":         (1, 1300, 578),   # "work site on ___" ítem 7
-    "individual_name":   (1,  950, 833),   # nombre — después de "Stated his/her name as: "
-    "individual_rel":    (1,  845, 898),   # relación — después de "building "
-    "individual_desc":   (1,  975, 1033),  # descripción — después de "Description of individual "
-    "individual_phone":  (1, 1370, 1193),  # teléfono — después de "Telephone number of the individual "
-
-    "sworn_day":         (1,  548, 1778),  # día ante notario
-    "sworn_month":       (1,  703, 1778),  # mes ante notario
-    "sworn_year":        (1, 1003, 1778),  # año ante notario
+    "omo_number"        : "1",     # header + ítem 2 OMO# (sync automático)
+    "county"            : "2",
+    "building_address"  : "23",    # "to go to building located at ___"
+    "service_charge"    : "4",
+    "inacc_reason"      : "5",     # línea 1 de inaccesibilidad
+    "inacc_reason2"     : "6",     # línea 2 de inaccesibilidad
+    "attempt_date1"     : "7",
+    "attempt_date2"     : "9",
+    "phone_date1"       : "8",
+    "phone_date2"       : "10",
+    "arrival_5"         : "11",
+    "arrival_6"         : "12",
+    "contractor_name"   : "13",
+    "arrival_7"         : "14",    # pág 2 — ítem 7 "work site on ___"
+    "individual_name"   : "15",
+    "individual_rel"    : "16",    # "building ___"
+    "individual_desc"   : "17",
+    "individual_phone"  : "18",
+    "sworn_day"         : "19",
+    "sworn_month"       : "21",
+    "sworn_year"        : "22",
 }
 
+INVOICE_FIELDS = {
+    "omo_number"        : "OMO",
+    "invoice_number"    : "Invoice",
+    "rc_number"         : "If Yes Provide RC or Mini RC",
+    "trade"             : "TRADE",
+    "invoice_date"      : "INVOICE DATE",
+    "borough"           : "BOROUGH",
+    "work_start_date"   : "Date Work Started_2",
+    "building_address"  : "Building Address",
+    "work_end_date"     : "Date Work Completed_2",
+    "work_location_apt" : "Work LocationApt",
+    "inv_desc1"         : "DESCRIPTION OF WORK DONERow1",
+    "inv_desc2"         : "DESCRIPTION OF WORK DONERow2",
+    "inv_desc3"         : "DESCRIPTION OF WORK DONERow3",
+    "inv_desc4"         : "DESCRIPTION OF WORK DONERow4",
+    "inv_desc5"         : "DESCRIPTION OF WORK DONERow5",
+    "inv_desc6"         : "DESCRIPTION OF WORK DONERow6",
+    "bid_amount"        : "Bid Amount_2",
+    "total_charge"      : "TOTAL CHARGE",
+}
 
-def _insert_text(page, x: float, y: float, text: str):
-    """Inserta texto en una página en coordenadas absolutas (top-left origin)."""
-    if not text:
-        return
-    page.insert_text(
-        (x, y),
-        str(text),
-        fontname=FONT,
-        fontsize=FONT_SIZE,
-        color=COLOR,
-    )
-
-
-def fill_work_pdf(record: dict, output_path: str) -> str:
-    """Genera un PDF 'Work Performed' llenado con los datos del registro."""
-    doc = fitz.open(WORK_TEMPLATE)
-    pages = list(doc)
-
-    def page_write(field_key, value):
-        if not value:
-            return
-        pg_idx, x, y = WORK_FIELDS[field_key]
-        _insert_text(pages[pg_idx], x, y, value)
-
-    omo = record.get("omo_number", "")
-    page_write("omo_header",   omo)
-    page_write("omo_p2",       omo)
-    page_write("omo_item3",    omo)
-    page_write("county",       record.get("county", ""))
-    page_write("date_directed", record.get("date_directed", ""))
-    page_write("building_address", record.get("building_address", ""))
-
-    work_type = record.get("work_type", "")
-
-    if work_type == "ALL":
-        page_write("work_start_date", record.get("work_start_date", ""))
-        page_write("work_end_date",   record.get("work_end_date", ""))
-
-    elif work_type == "PARTIAL":
-        page_write("partial_reason", record.get("partial_reason", ""))
-        amt = record.get("partial_amount", "")
-        page_write("partial_amount", amt)
-
-    elif work_type == "INTERRUPTED":
-        amt = record.get("interrupted_amount", "")
-        page_write("interrupted_amount", amt)
-
-    # Datos de la persona que impidió el trabajo (página 2, aplica a ítem 8)
-    page_write("prevented_name", record.get("prevented_name", ""))
-    page_write("prevented_rel",  record.get("prevented_rel", ""))
-    page_write("prevented_desc", record.get("prevented_desc", ""))
-
-    # Sección notario  (el formulario ya imprime "20", solo escribimos los 2 últimos dígitos)
-    page_write("sworn_day",   record.get("sworn_day", ""))
-    page_write("sworn_month", record.get("sworn_month", ""))
-    yr = record.get("sworn_year", "")
-    page_write("sworn_year",  yr[-2:] if len(yr) >= 4 else yr)
-
-    doc.save(output_path)
-    doc.close()
-    return output_path
+# Materiales: campos '1'-'6' del invoice y 6 primeros campos 'Quanity'
+INVOICE_MAT_FIELDS  = [str(i) for i in range(1, 7)]   # nombres de campo material
+INVOICE_QTY_FIELD   = "Quanity"                        # campo duplicado (12 instancias)
 
 
-def fill_nowork_pdf(record: dict, output_path: str) -> str:
-    """Genera un PDF 'No Work Performed' llenado con los datos del registro."""
-    doc = fitz.open(NOWORK_TEMPLATE)
-    pages = list(doc)
+# ─── Motor de relleno ─────────────────────────────────────────────────────────
 
-    def page_write(field_key, value):
-        if not value:
-            return
-        pg_idx, x, y = NOWORK_FIELDS[field_key]
-        _insert_text(pages[pg_idx], x, y, value)
-
-    omo = record.get("omo_number", "")
-    page_write("omo_header",   omo)
-    page_write("omo_p2",       omo)
-    page_write("omo_item2",    omo)
-    page_write("county",       record.get("county", ""))
-    page_write("building_address",  record.get("building_address", ""))
-    page_write("service_charge",    record.get("service_charge", ""))
-
-    reason = record.get("nowork_reason", "")
-    arrival = record.get("arrival_date", "")
-
-    if reason == "4":
-        page_write("inacc_reason",  record.get("inacc_reason", ""))
-        page_write("attempt_date1", record.get("attempt_date1", ""))
-        page_write("attempt_date2", record.get("attempt_date2", ""))
-        page_write("phone_date1",   record.get("phone_date1", ""))
-        page_write("phone_date2",   record.get("phone_date2", ""))
-
-    elif reason == "5":
-        page_write("arrival_5", arrival)
-
-    elif reason == "6":
-        page_write("arrival_6",       arrival)
-        page_write("contractor_name", record.get("contractor_name", ""))
-
-    elif reason == "7":
-        page_write("arrival_7",       arrival)
-        page_write("individual_name", record.get("individual_name", ""))
-        page_write("individual_rel",  record.get("individual_rel", ""))
-        page_write("individual_desc", record.get("individual_desc", ""))
-        page_write("individual_phone",record.get("individual_phone", ""))
-
-    # Sección notario  (el formulario ya imprime "20", solo escribimos los 2 últimos dígitos)
-    page_write("sworn_day",   record.get("sworn_day", ""))
-    page_write("sworn_month", record.get("sworn_month", ""))
-    yr = record.get("sworn_year", "")
-    page_write("sworn_year",  yr[-2:] if len(yr) >= 4 else yr)
-
-    doc.save(output_path)
-    doc.close()
-    return output_path
-
-
-def generate_pdf(record: dict) -> str:
+def _fill_pdf(template_path: str, field_values: dict, output_path: str):
     """
-    Genera el PDF llenado para un registro y devuelve la ruta del archivo.
-    El archivo se guarda en /output/ con nombre OMO_<id>.pdf
+    Rellena un PDF fillable usando los nombres de campo.
+    Itera página a página para mantener las referencias de widgets válidas.
+    """
+    doc = fitz.open(template_path)
+
+    for page in doc:
+        for w in page.widgets():
+            name = w.field_name
+            if name in field_values and field_values[name]:
+                w.field_value = str(field_values[name])
+                w.update()
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    doc.save(output_path)
+    doc.close()
+    return output_path
+
+
+def _build_affidavit_values(record: dict) -> dict:
+    """Construye el dict de valores para el affidavit (work o nowork)."""
+    fields = WORK_FIELDS if record.get("doc_type") == "work" else NOWORK_FIELDS
+    values = {}
+
+    for rec_key, pdf_key in fields.items():
+        val = record.get(rec_key, "") or ""
+
+        # sworn_year: solo 2 dígitos (el template ya imprime "20")
+        if rec_key == "sworn_year" and len(val) >= 4:
+            val = val[-2:]
+
+        # inacc_reason2 no existe como campo en record → se divide inacc_reason
+        if rec_key == "inacc_reason2":
+            full = record.get("inacc_reason", "") or ""
+            # Si el texto es largo, dividir en mitad para las dos líneas
+            mid = len(full) // 2
+            if len(full) > 60:
+                # Cortar en el espacio más cercano a la mitad
+                cut = full.rfind(" ", 0, mid + 10)
+                val = full[cut:].strip() if cut > 0 else full[mid:]
+            else:
+                val = ""  # Si es corto, entra en la primera línea sola
+
+        if rec_key == "inacc_reason" and record.get("inacc_reason", ""):
+            full = record.get("inacc_reason", "") or ""
+            if len(full) > 60:
+                mid = len(full) // 2
+                cut = full.rfind(" ", 0, mid + 10)
+                val = full[:cut].strip() if cut > 0 else full[:mid]
+
+        if val:
+            values[pdf_key] = val
+
+    return values
+
+
+def _build_invoice_values(record: dict) -> dict:
+    """Construye el dict de valores para la invoice."""
+    values = {}
+
+    for rec_key, pdf_key in INVOICE_FIELDS.items():
+        val = record.get(rec_key, "") or ""
+        if val:
+            values[pdf_key] = val
+
+    # Auto-derivar borough desde county si no está seteado
+    if not values.get("BOROUGH"):
+        county = (record.get("county") or "").lower().strip()
+        borough = COUNTY_BOROUGH.get(county, "")
+        if borough:
+            values["BOROUGH"] = borough
+
+    # Invoice date: si no está, usar work_end_date o today
+    if not values.get("INVOICE DATE"):
+        values["INVOICE DATE"] = (
+            record.get("work_end_date") or
+            record.get("invoice_date") or
+            datetime.today().strftime("%m/%d/%y")
+        )
+
+    # Materiales (campos '1'-'6') y cantidades (6 primeras instancias de 'Quanity')
+    for i, mat_field in enumerate(INVOICE_MAT_FIELDS, start=1):
+        mat = record.get(f"inv_mat{i}") or ""
+        if mat:
+            values[mat_field] = mat
+
+    return values
+
+
+def _build_invoice_qty_values(record: dict) -> list:
+    """
+    Devuelve lista de (índice, valor) para los campos 'Quanity' duplicados.
+    Solo sets los primeros 6 slots.
+    """
+    result = []
+    for i in range(1, 7):
+        qty = record.get(f"inv_qty{i}") or ""
+        result.append((i - 1, qty))  # (índice en lista de widgets, valor)
+    return result
+
+
+# ─── API pública ──────────────────────────────────────────────────────────────
+
+def fill_affidavit(record: dict, output_path: str) -> str:
+    """Genera el affidavit (work o nowork) y lo guarda en output_path."""
+    template = WORK_TEMPLATE if record.get("doc_type") == "work" else NOWORK_TEMPLATE
+    values   = _build_affidavit_values(record)
+    return _fill_pdf(template, values, output_path)
+
+
+def fill_invoice(record: dict, output_path: str) -> str:
+    """Genera la invoice y la guarda en output_path."""
+    values = _build_invoice_values(record)
+
+    doc = fitz.open(INVOICE_TEMPLATE)
+
+    # Contadores de instancias para campos duplicados (ej: 'Quanity')
+    qty_counter = 0
+
+    for page in doc:
+        for w in page.widgets():
+            name = w.field_name
+
+            # Campos normales
+            if name in values and values[name]:
+                w.field_value = str(values[name])
+                w.update()
+                continue
+
+            # Materiales: campos '1'-'12' (usar solo '1'-'6')
+            if name in INVOICE_MAT_FIELDS:
+                idx = INVOICE_MAT_FIELDS.index(name) + 1
+                mat = record.get(f"inv_mat{idx}") or ""
+                if mat:
+                    w.field_value = str(mat)
+                    w.update()
+                continue
+
+            # Cantidades: campo 'Quanity' duplicado (por orden de aparición)
+            if name == INVOICE_QTY_FIELD and qty_counter < 6:
+                qty = record.get(f"inv_qty{qty_counter + 1}") or ""
+                if qty:
+                    w.field_value = str(qty)
+                    w.update()
+                qty_counter += 1
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    doc.save(output_path)
+    doc.close()
+    return output_path
+
+
+def generate_pdfs(record: dict) -> dict:
+    """
+    Genera el affidavit Y la invoice para un registro.
+    Devuelve {'affidavit': path, 'invoice': path, 'zip': path}
     """
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
     rec_id  = record.get("id", "tmp")
-    omo_num = record.get("omo_number", "sin_omo").replace("/", "_").replace(" ", "_")
-    filename = f"{'WORK' if record.get('doc_type') == 'work' else 'NOWORK'}_{omo_num}_{rec_id}.pdf"
-    output_path = os.path.join(OUTPUT_DIR, filename)
+    omo_num = (record.get("omo_number") or "sin_omo").replace("/", "_").replace(" ", "_")
+    doc_type = "WORK" if record.get("doc_type") == "work" else "NOWORK"
 
-    if record.get("doc_type") == "work":
-        fill_work_pdf(record, output_path)
-    else:
-        fill_nowork_pdf(record, output_path)
+    aff_path = os.path.join(OUTPUT_DIR, f"{doc_type}_Affidavit_{omo_num}_{rec_id}.pdf")
+    inv_path = os.path.join(OUTPUT_DIR, f"Invoice_{omo_num}_{rec_id}.pdf")
+    zip_path = os.path.join(OUTPUT_DIR, f"Docs_{omo_num}_{rec_id}.zip")
 
-    return output_path
+    fill_affidavit(record, aff_path)
+    fill_invoice(record, inv_path)
+
+    # Crear ZIP con ambos docs
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.write(aff_path, os.path.basename(aff_path))
+        zf.write(inv_path, os.path.basename(inv_path))
+
+    return {"affidavit": aff_path, "invoice": inv_path, "zip": zip_path}
+
+
+# Backward-compat alias
+def generate_pdf(record: dict) -> str:
+    return generate_pdfs(record)["affidavit"]
