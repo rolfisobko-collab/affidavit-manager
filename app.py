@@ -75,6 +75,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS records (
     id                   {pk},
     doc_type             TEXT NOT NULL DEFAULT 'work',
+    status               TEXT NOT NULL DEFAULT 'pending',
 
     -- Campos comunes
     omo_number           TEXT,
@@ -157,6 +158,7 @@ SCHEMA_POSTGRES = SCHEMA.format(
 
 # Migración: columnas nuevas para DBs existentes
 MIGRATION_COLS = [
+    ("status", "TEXT DEFAULT 'pending'"),
     ("invoice_number", "TEXT"), ("invoice_date", "TEXT"), ("trade", "TEXT"),
     ("borough", "TEXT"), ("work_location_apt", "TEXT"), ("rc_number", "TEXT"),
     ("inv_desc1", "TEXT"), ("inv_desc2", "TEXT"), ("inv_desc3", "TEXT"),
@@ -185,7 +187,7 @@ def init_db():
 
 
 COLUMNS = [
-    "doc_type", "omo_number", "county", "building_address", "date_directed",
+    "doc_type", "status", "omo_number", "county", "building_address", "date_directed",
     "work_type", "work_start_date", "work_end_date", "partial_reason",
     "partial_amount", "interrupted_amount", "prevented_name", "prevented_rel",
     "prevented_desc", "service_charge", "nowork_reason", "inacc_reason",
@@ -301,6 +303,36 @@ def delete_record(rec_id):
     finally:
         conn.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/records/<int:rec_id>/status", methods=["PATCH"])
+def update_status(rec_id):
+    """
+    Transitions de estado del servicio.
+    Allowed: pending → work_performed | no_work_performed → submitted → paid
+    """
+    data   = request.get_json(force=True) or {}
+    new_st = data.get("status", "")
+    valid  = {"pending", "work_performed", "no_work_performed", "submitted", "paid"}
+    if new_st not in valid:
+        return jsonify({"error": f"Invalid status. Must be one of: {', '.join(valid)}"}), 400
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM records WHERE id = {ph()}", (rec_id,))
+        if not cur.fetchone():
+            return jsonify({"error": "Not found"}), 404
+        cur.execute(
+            f"UPDATE records SET status = {ph()}, updated_at = {ph()} WHERE id = {ph()}",
+            (new_st, datetime.now(timezone.utc).isoformat(), rec_id),
+        )
+        conn.commit()
+        cur.execute(f"SELECT * FROM records WHERE id = {ph()}", (rec_id,))
+        row = serialize(fetchone(cur))
+    finally:
+        conn.close()
+    return jsonify(row)
 
 
 @app.route("/api/records/<int:rec_id>/pdf/<doc>")

@@ -159,7 +159,14 @@ def _build_affidavit_values(record: dict) -> dict:
 
 
 def _build_invoice_values(record: dict) -> dict:
-    """Construye el dict de valores para la invoice."""
+    """
+    Construye el dict de valores para la invoice.
+
+    Lógica según tipo de servicio:
+    - work_performed:  materiales + amounts del record
+    - no_work_performed: mat[1] queda como "NO WORK DONE" (default del template),
+                         bid_amount y total_charge se toman del service_charge
+    """
     values = {}
 
     for rec_key, pdf_key in INVOICE_FIELDS.items():
@@ -182,11 +189,29 @@ def _build_invoice_values(record: dict) -> dict:
             datetime.today().strftime("%m/%d/%y")
         )
 
-    # Materiales (campos '1'-'6') y cantidades (6 primeras instancias de 'Quanity')
-    for i, mat_field in enumerate(INVOICE_MAT_FIELDS, start=1):
-        mat = record.get(f"inv_mat{i}") or ""
-        if mat:
-            values[mat_field] = mat
+    # ── Lógica específica para No Work Performed ──────────────────────────────
+    # El template ya tiene "NO WORK DONE" en campo '1' por defecto.
+    # Solo necesitamos asegurarnos de que amounts = service_charge.
+    if record.get("doc_type") == "nowork":
+        svc = (record.get("service_charge") or "0.00").strip()
+        if not values.get("Bid Amount_2"):
+            values["Bid Amount_2"] = svc
+        if not values.get("TOTAL CHARGE"):
+            values["TOTAL CHARGE"] = svc
+        # Descripción si no está
+        if not values.get("DESCRIPTION OF WORK DONERow1"):
+            values["DESCRIPTION OF WORK DONERow1"] = "NO WORK PERFORMED – SERVICE CHARGE ONLY"
+        if not values.get("DESCRIPTION OF WORK DONERow2"):
+            reason_map = {
+                "4": "REASON: AREA PHYSICALLY INACCESSIBLE",
+                "5": "REASON: WORK ALREADY COMPLETED BY OTHERS",
+                "6": "REASON: WORK BEING PERFORMED BY OTHERS",
+                "7": "REASON: ACCESS DENIED BY TENANT/OWNER",
+            }
+            reason = reason_map.get(str(record.get("nowork_reason") or ""), "")
+            if reason:
+                values["DESCRIPTION OF WORK DONERow2"] = reason
+        # NO setear campo '1' (material) → template mantiene "NO WORK DONE"
 
     return values
 
