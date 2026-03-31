@@ -197,97 +197,167 @@ a { color: inherit; text-decoration: none; }
 
 /* ── PIPELINE ────────────────────────────────────────────────────────────────── */
 .pipeline-wrap {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 24px;
+  background: var(--navy-900);
   position: sticky;
   top: var(--header-h);
   z-index: 100;
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
 }
 
-.pipeline {
+/* Flow hint bar */
+.flow-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 8px 24px 0;
+  overflow-x: auto;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.flow-hint-step {
   display: flex;
   align-items: center;
   gap: 6px;
+  font-size: .7rem;
+  color: rgba(255,255,255,.35);
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+.flow-hint-step.active-hint { color: rgba(255,255,255,.75); font-weight: 700; }
+.flow-hint-arrow {
+  color: rgba(255,255,255,.18);
+  font-size: .8rem;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.flow-hint-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  flex-shrink: 0;
+}
+.flow-hint-step.active-hint .flow-hint-dot { background: var(--gold-400); }
+
+/* Pipeline steps */
+.pipeline {
+  display: flex;
+  align-items: stretch;
   max-width: 1100px;
   margin: 0 auto;
+  padding: 12px 16px 0;
+  gap: 4px;
   overflow-x: auto;
-  padding-bottom: 2px;
 }
 
-.pipe-connector {
-  flex-shrink: 0;
-  width: 28px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--border-2), var(--border));
-  border-radius: 2px;
-  margin: 0 -2px;
-}
-
-.pipe-card {
+.pipe-step {
   flex: 1;
-  min-width: 110px;
-  max-width: 200px;
-  background: var(--surface-2);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: var(--t-base);
+  min-width: 90px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 0;
+  cursor: pointer;
+  padding: 10px 8px 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   position: relative;
-  overflow: hidden;
+  transition: var(--t-base);
+  background: transparent;
+  border: none;
 }
-.pipe-card::before {
+.pipe-step::after {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
   height: 3px;
-  background: var(--border-2);
-  border-radius: 0 0 var(--radius) var(--radius);
+  background: transparent;
+  border-radius: 3px 3px 0 0;
   transition: var(--t-base);
 }
-.pipe-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.pipe-step:hover { background: rgba(255,255,255,.05); }
 
-.pipe-card[data-s="all"]::before          { background: var(--navy-500); }
-.pipe-card[data-s="pending"]::before      { background: var(--status-pending); }
-.pipe-card[data-s="work_performed"]::before { background: var(--status-work); }
-.pipe-card[data-s="no_work_performed"]::before { background: var(--status-nowork); }
-.pipe-card[data-s="submitted"]::before    { background: var(--status-submitted); }
-.pipe-card[data-s="paid"]::before         { background: var(--status-paid); }
+/* Active state */
+.pipe-step.active-filter            { background: rgba(255,255,255,.1); }
+.pipe-step[data-s="all"].active-filter::after            { background: var(--navy-400); }
+.pipe-step[data-s="pending"].active-filter::after        { background: var(--status-pending-bd); }
+.pipe-step[data-s="work_performed"].active-filter::after { background: var(--status-work-bd); }
+.pipe-step[data-s="no_work_performed"].active-filter::after { background: var(--status-nowork-bd); }
+.pipe-step[data-s="submitted"].active-filter::after      { background: var(--status-submitted-bd); }
+.pipe-step[data-s="paid"].active-filter::after           { background: var(--status-paid-bd); }
 
-.pipe-card.active-filter {
-  border-color: transparent;
-  box-shadow: var(--shadow-sm);
-}
-.pipe-card[data-s="all"].active-filter          { background: var(--navy-50); border-color: var(--navy-400); }
-.pipe-card[data-s="pending"].active-filter      { background: var(--status-pending-bg); border-color: var(--status-pending-bd); }
-.pipe-card[data-s="work_performed"].active-filter { background: var(--status-work-bg); border-color: var(--status-work-bd); }
-.pipe-card[data-s="no_work_performed"].active-filter { background: var(--status-nowork-bg); border-color: var(--status-nowork-bd); }
-.pipe-card[data-s="submitted"].active-filter    { background: var(--status-submitted-bg); border-color: var(--status-submitted-bd); }
-.pipe-card[data-s="paid"].active-filter         { background: var(--status-paid-bg); border-color: var(--status-paid-bd); }
-
-.pipe-top {
+/* Step icon bubble */
+.pipe-bubble {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.12);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  font-size: 1rem;
+  transition: var(--t-base);
+  margin-bottom: 6px;
+  flex-shrink: 0;
 }
-.pipe-icon { font-size: 1rem; }
+.pipe-step[data-s="all"]             .pipe-bubble { background: rgba(84,130,184,.25);  border-color: rgba(84,130,184,.4); }
+.pipe-step[data-s="pending"]         .pipe-bubble { background: rgba(100,116,139,.25); border-color: rgba(100,116,139,.4); }
+.pipe-step[data-s="work_performed"]  .pipe-bubble { background: rgba(5,150,105,.25);   border-color: rgba(5,150,105,.4); }
+.pipe-step[data-s="no_work_performed"].pipe-bubble{ background: rgba(220,38,38,.25);   border-color: rgba(220,38,38,.4); }
+.pipe-step[data-s="submitted"]       .pipe-bubble { background: rgba(37,99,235,.25);   border-color: rgba(37,99,235,.4); }
+.pipe-step[data-s="paid"]            .pipe-bubble { background: rgba(217,119,6,.25);   border-color: rgba(217,119,6,.4); }
+
+.pipe-step.active-filter .pipe-bubble {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+}
+.pipe-step[data-s="all"].active-filter             .pipe-bubble { background: rgba(84,130,184,.5);  border-color: var(--navy-400); }
+.pipe-step[data-s="pending"].active-filter         .pipe-bubble { background: rgba(100,116,139,.5); border-color: var(--status-pending-bd); }
+.pipe-step[data-s="work_performed"].active-filter  .pipe-bubble { background: rgba(5,150,105,.5);   border-color: var(--status-work-bd); }
+.pipe-step[data-s="no_work_performed"].active-filter .pipe-bubble{ background: rgba(220,38,38,.5);  border-color: var(--status-nowork-bd); }
+.pipe-step[data-s="submitted"].active-filter       .pipe-bubble { background: rgba(37,99,235,.5);   border-color: var(--status-submitted-bd); }
+.pipe-step[data-s="paid"].active-filter            .pipe-bubble { background: rgba(217,119,6,.5);   border-color: var(--status-paid-bd); }
+
+/* Count & Label */
+.pipe-count-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 10px;
+}
 .pipe-count {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  color: var(--text);
+  color: rgba(255,255,255,.9);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .pipe-label {
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 600;
-  color: var(--text-2);
+  color: rgba(255,255,255,.4);
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: .6px;
+  white-space: nowrap;
+}
+.pipe-step.active-filter .pipe-count { color: #fff; }
+.pipe-step.active-filter .pipe-label { color: rgba(255,255,255,.75); }
+
+/* Vertical dividers between steps */
+.pipe-divider {
+  width: 1px;
+  background: rgba(255,255,255,.07);
+  align-self: stretch;
+  margin: 10px 0;
+  flex-shrink: 0;
+}
+
+/* Bottom border line */
+.pipeline-bottom {
+  height: 3px;
+  background: rgba(255,255,255,.04);
+  max-width: 100%;
 }
 
 /* ── MAIN CONTENT ────────────────────────────────────────────────────────────── */
@@ -359,37 +429,18 @@ a { color: inherit; text-decoration: none; }
 .services-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .service-card {
   background: var(--surface);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 16px;
-  align-items: center;
+  overflow: hidden;
   transition: var(--t-base);
   cursor: default;
   position: relative;
-  overflow: hidden;
 }
-.service-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  background: var(--border-2);
-  transition: var(--t-base);
-}
-.service-card[data-status="pending"]::before      { background: var(--status-pending); }
-.service-card[data-status="work_performed"]::before { background: var(--status-work); }
-.service-card[data-status="no_work_performed"]::before { background: var(--status-nowork); }
-.service-card[data-status="submitted"]::before    { background: var(--status-submitted); }
-.service-card[data-status="paid"]::before         { background: var(--status-paid); }
 .service-card:hover {
   border-color: var(--navy-200);
   box-shadow: var(--shadow-sm);
@@ -399,24 +450,46 @@ a { color: inherit; text-decoration: none; }
   animation: cardIn .3s var(--t-slow) both;
 }
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Colored top border per status */
+.service-card::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: var(--border);
+}
+.service-card[data-status="pending"]::before         { background: var(--status-pending); }
+.service-card[data-status="work_performed"]::before  { background: linear-gradient(90deg, var(--status-work), #34d399); }
+.service-card[data-status="no_work_performed"]::before { background: linear-gradient(90deg, var(--status-nowork), #f87171); }
+.service-card[data-status="submitted"]::before       { background: linear-gradient(90deg, var(--status-submitted), #60a5fa); }
+.service-card[data-status="paid"]::before            { background: linear-gradient(90deg, var(--status-paid), var(--gold-400)); }
+
+.card-inner {
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: start;
+}
+
 .card-left {
+  padding-top: 2px;
+  min-width: 88px;
   text-align: center;
-  min-width: 80px;
 }
 .omo-num {
-  font-size: .95rem;
+  font-size: .92rem;
   font-weight: 800;
   color: var(--navy-700);
   font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
-  letter-spacing: .5px;
+  letter-spacing: .3px;
   display: block;
 }
 .omo-date {
-  font-size: .72rem;
+  font-size: .71rem;
   color: var(--text-3);
   margin-top: 3px;
 }
@@ -433,28 +506,27 @@ a { color: inherit; text-decoration: none; }
 .card-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 5px;
+  gap: 6px;
+  margin-top: 6px;
   flex-wrap: wrap;
 }
 .meta-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: .74rem;
+  gap: 3px;
+  font-size: .72rem;
   color: var(--text-2);
   background: var(--surface-2);
   border: 1px solid var(--border);
   padding: 2px 8px;
   border-radius: 99px;
 }
-.meta-chip svg { opacity: .7; }
 
 .card-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -462,63 +534,89 @@ a { color: inherit; text-decoration: none; }
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 11px;
+  gap: 4px;
+  padding: 4px 10px;
   border-radius: 99px;
-  font-size: .74rem;
+  font-size: .72rem;
   font-weight: 700;
   letter-spacing: .2px;
   border: 1px solid transparent;
 }
-.badge-pending      { background: var(--status-pending-bg); color: var(--status-pending); border-color: var(--status-pending-bd); }
-.badge-work_performed { background: var(--status-work-bg); color: var(--status-work); border-color: var(--status-work-bd); }
-.badge-no_work_performed { background: var(--status-nowork-bg); color: var(--status-nowork); border-color: var(--status-nowork-bd); }
-.badge-submitted    { background: var(--status-submitted-bg); color: var(--status-submitted); border-color: var(--status-submitted-bd); }
-.badge-paid         { background: var(--status-paid-bg); color: var(--status-paid); border-color: var(--status-paid-bd); }
+.badge-pending         { background: var(--status-pending-bg); color: var(--status-pending); border-color: var(--status-pending-bd); }
+.badge-work_performed  { background: var(--status-work-bg);    color: var(--status-work);    border-color: var(--status-work-bd); }
+.badge-no_work_performed { background: var(--status-nowork-bg);color: var(--status-nowork);  border-color: var(--status-nowork-bd); }
+.badge-submitted       { background: var(--status-submitted-bg);color: var(--status-submitted);border-color: var(--status-submitted-bd); }
+.badge-paid            { background: var(--status-paid-bg);    color: var(--status-paid);    border-color: var(--status-paid-bd); }
 
 /* Amount */
 .card-amount {
-  font-size: .9rem;
+  font-size: .92rem;
   font-weight: 800;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
-.card-amount.no-amount { color: var(--text-3); font-weight: 400; }
+.card-amount.no-amount { color: var(--text-3); font-weight: 400; font-size: .82rem; }
 
-/* Action buttons */
-.card-actions {
+/* ── Actions section at the bottom of each card ────────────────────────────── */
+.card-footer {
+  padding: 8px 18px 12px;
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
 }
+
+.footer-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border-2);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Action buttons */
 .act-btn {
-  height: 30px;
+  height: 28px;
   padding: 0 10px;
   border: 1.5px solid transparent;
-  border-radius: var(--radius-sm);
-  font-size: .76rem;
+  border-radius: 6px;
+  font-size: .75rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   transition: var(--t-fast);
   white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
 }
-.act-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-xs); }
+.act-btn:hover  { transform: translateY(-1px); }
 .act-btn:active { transform: translateY(0); }
 
-.act-primary   { background: var(--navy-700); color: #fff; border-color: var(--navy-700); }
-.act-primary:hover { background: var(--navy-600); }
-.act-work      { background: var(--status-work-bg); color: var(--status-work); border-color: var(--status-work-bd); }
-.act-nowork    { background: var(--status-nowork-bg); color: var(--status-nowork); border-color: var(--status-nowork-bd); }
-.act-submit    { background: var(--status-submitted-bg); color: var(--status-submitted); border-color: var(--status-submitted-bd); }
-.act-paid      { background: var(--status-paid-bg); color: var(--status-paid); border-color: var(--status-paid-bd); }
-.act-dl        { background: #f3e8ff; color: #7c3aed; border-color: #c4b5fd; font-weight: 700; }
-.act-dl:hover  { background: #ede9fe; box-shadow: 0 2px 8px rgba(124,58,237,.2); }
-.act-zip       { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; font-weight: 700; }
-.act-zip:hover { background: #bae6fd; box-shadow: 0 2px 8px rgba(3,105,161,.2); }
-.act-edit      { background: var(--navy-50); color: var(--navy-700); border-color: var(--navy-200); }
-.act-danger    { background: var(--status-nowork-bg); color: var(--status-nowork); border-color: var(--status-nowork-bd); }
+/* Print/download — prominence */
+.act-print {
+  background: var(--navy-700);
+  color: #fff;
+  border-color: var(--navy-700);
+}
+.act-print:hover { background: var(--navy-600); box-shadow: 0 2px 8px rgba(26,53,96,.25); }
+
+.act-zip   { background: var(--navy-50); color: var(--navy-700); border-color: var(--navy-200); }
+.act-zip:hover { background: var(--navy-100); }
+
+/* Workflow actions */
+.act-work   { background: var(--status-work-bg);    color: var(--status-work);    border-color: var(--status-work-bd); }
+.act-nowork { background: var(--status-nowork-bg);  color: var(--status-nowork);  border-color: var(--status-nowork-bd); }
+.act-submit { background: var(--status-submitted-bg);color: var(--status-submitted);border-color: var(--status-submitted-bd); }
+.act-paid   { background: var(--status-paid-bg);    color: var(--status-paid);    border-color: var(--status-paid-bd); }
+
+/* Edit / delete */
+.act-edit   { background: transparent; color: var(--text-3); border-color: transparent; }
+.act-edit:hover { color: var(--navy-600); background: var(--navy-50); }
+.act-danger { background: transparent; color: var(--text-3); border-color: transparent; }
+.act-danger:hover { color: var(--status-nowork); background: var(--status-nowork-bg); }
 
 /* ── EMPTY STATE ─────────────────────────────────────────────────────────────── */
 .empty-state {
@@ -899,16 +997,17 @@ select.form-control {
 @media (max-width: 768px) {
   .header { padding: 0 14px; }
   .logo-sub { display: none; }
-  .pipeline-wrap { padding: 12px 14px; }
-  .pipe-card { min-width: 85px; padding: 8px 10px; }
+  .flow-hint { display: none; }
+  .pipeline { padding: 10px 10px 0; gap: 2px; }
+  .pipe-step { min-width: 70px; padding: 8px 4px 0; }
+  .pipe-bubble { width: 32px; height: 32px; font-size: .85rem; margin-bottom: 5px; }
   .pipe-count { font-size: 1.1rem; }
-  .pipe-label { font-size: .65rem; }
+  .pipe-label { font-size: .6rem; }
 
-  .main { padding: 16px 12px 60px; }
-  .service-card { grid-template-columns: 1fr; gap: 10px; padding: 14px; }
-  .card-left { display: flex; align-items: center; justify-content: space-between; }
-  .card-right { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
-  .card-actions { justify-content: flex-start; }
+  .main { padding: 14px 10px 60px; }
+  .card-inner { grid-template-columns: auto 1fr; gap: 10px; padding: 12px 14px; }
+  .card-right { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; }
+  .card-footer { padding: 8px 14px 10px; }
 
   .modal { border-radius: var(--radius-lg) var(--radius-lg) 0 0; position: fixed; bottom: 0; max-width: 100%; margin: 0; max-height: 92vh; overflow-y: auto; }
   .overlay { padding: 0; align-items: flex-end; }
@@ -921,6 +1020,7 @@ select.form-control {
 
 @media (max-width: 480px) {
   .btn-new span { display: none; }
-  .btn-new::after { content: '+'; font-size: 1.1rem; }
-  .pipe-connector { width: 12px; }
+  .pipeline { padding: 8px 8px 0; }
+  .pipe-divider { display: none; }
+  .pipe-bubble { width: 28px; height: 28px; font-size: .8rem; }
 }

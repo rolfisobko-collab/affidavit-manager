@@ -521,46 +521,58 @@ function renderAll() {
       r.invoice_number ? `<span class="meta-chip">🧾 #${esc(r.invoice_number)}</span>` : '',
     ].filter(Boolean).join('');
 
-    // ── Acciones de descarga/impresión: SIEMPRE disponibles ────────────────────
-    // Los PDFs se generan escribiendo sobre los templates provistos.
-    const actions = [
-      `<button class="act-btn act-dl"  onclick="dlPdf(${r.id},'affidavit')" title="${t('action_aff')}">📋 ${t('action_aff')}</button>`,
-      `<button class="act-btn act-dl"  onclick="dlPdf(${r.id},'invoice')"   title="${t('action_inv')}">🧾 ${t('action_inv')}</button>`,
-      `<button class="act-btn act-zip" onclick="dlPdf(${r.id},'zip')"       title="${t('action_zip')}">📦 ${t('action_zip')}</button>`,
+    // ── Print/download — always visible (writes over provided PDF templates) ───
+    const printBtns = [
+      `<button class="act-btn act-print" onclick="dlPdf(${r.id},'affidavit')">📋 ${t('action_aff')}</button>`,
+      `<button class="act-btn act-print" onclick="dlPdf(${r.id},'invoice')">🧾 ${t('action_inv')}</button>`,
+      `<button class="act-btn act-zip"   onclick="dlPdf(${r.id},'zip')">📦 ${t('action_zip')}</button>`,
     ];
 
-    // ── Acciones de workflow: según estado ─────────────────────────────────────
+    // ── Workflow actions — context-sensitive ────────────────────────────────────
+    const workflowBtns = [];
     if (r.status === 'pending') {
-      actions.push(`<button class="act-btn act-work"   onclick="setStatus(${r.id},'work_performed')">${t('action_mark_work')}</button>`);
-      actions.push(`<button class="act-btn act-nowork" onclick="setStatus(${r.id},'no_work_performed')">${t('action_mark_nowork')}</button>`);
+      workflowBtns.push(`<button class="act-btn act-work"   onclick="setStatus(${r.id},'work_performed')">${t('action_mark_work')}</button>`);
+      workflowBtns.push(`<button class="act-btn act-nowork" onclick="setStatus(${r.id},'no_work_performed')">${t('action_mark_nowork')}</button>`);
     }
     if (r.status === 'work_performed' || r.status === 'no_work_performed') {
-      actions.push(`<button class="act-btn act-submit" onclick="setStatus(${r.id},'submitted')">${t('action_submit')}</button>`);
+      workflowBtns.push(`<button class="act-btn act-submit" onclick="setStatus(${r.id},'submitted')">${t('action_submit')}</button>`);
     }
     if (r.status === 'submitted') {
-      actions.push(`<button class="act-btn act-paid" onclick="setStatus(${r.id},'paid')">${t('action_paid')}</button>`);
+      workflowBtns.push(`<button class="act-btn act-paid" onclick="setStatus(${r.id},'paid')">${t('action_paid')}</button>`);
     }
 
-    actions.push(`<button class="act-btn act-edit"   onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">${t('action_edit')}</button>`);
-    actions.push(`<button class="act-btn act-danger" onclick="deleteService(${r.id})">${t('action_del')}</button>`);
+    // ── Edit / delete ───────────────────────────────────────────────────────────
+    const mgmtBtns = [
+      `<button class="act-btn act-edit"   onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">${t('action_edit')}</button>`,
+      `<button class="act-btn act-danger" onclick="deleteService(${r.id})">${t('action_del')}</button>`,
+    ];
+
+    // Combine: print | sep | workflow | sep | mgmt
+    const sep = `<div class="footer-sep"></div>`;
+    const actions = [
+      ...printBtns,
+      ...(workflowBtns.length ? [sep, ...workflowBtns] : []),
+      sep,
+      ...mgmtBtns,
+    ];
 
     return `
     <div class="service-card entering" data-status="${r.status}" style="animation-delay:${idx * 30}ms">
-      <div class="card-left">
-        <span class="omo-num">${esc(r.omo_number) || '—'}</span>
-        <div class="omo-date">${esc(date)}</div>
-      </div>
-      <div class="card-mid">
-        <div class="card-address" title="${esc(addr)}">${esc(addr)}</div>
-        <div class="card-meta">${chips}</div>
-      </div>
-      <div class="card-right">
-        <div>
-          <span class="status-badge ${sm.badge}">${sm.icon} ${label}</span>
+      <div class="card-inner">
+        <div class="card-left">
+          <span class="omo-num">${esc(r.omo_number) || '—'}</span>
+          <div class="omo-date">${esc(date)}</div>
         </div>
-        <div class="${amt ? 'card-amount' : 'card-amount no-amount'}">${amt ?? '—'}</div>
-        <div class="card-actions">${actions.join('')}</div>
+        <div class="card-mid">
+          <div class="card-address" title="${esc(addr)}">${esc(addr)}</div>
+          <div class="card-meta">${chips}</div>
+        </div>
+        <div class="card-right">
+          <span class="status-badge ${sm.badge}">${sm.icon} ${label}</span>
+          <div class="${amt ? 'card-amount' : 'card-amount no-amount'}">${amt ?? '—'}</div>
+        </div>
       </div>
+      <div class="card-footer">${actions.join('')}</div>
     </div>`;
   }).join('');
 }

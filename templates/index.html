@@ -36,54 +36,71 @@
 
   <!-- ════════════════════════════ PIPELINE ══════════════════════════════════ -->
   <div class="pipeline-wrap">
-    <div class="pipeline">
-      <div class="pipe-card active-filter" data-s="all" onclick="setStatusFilter('all')">
-        <div class="pipe-top">
-          <span class="pipe-icon">📋</span>
-          <span class="pipe-count" id="pc_all">0</span>
-        </div>
-        <div class="pipe-label" data-t="pipe_all">All</div>
-      </div>
-      <div class="pipe-connector"></div>
-      <div class="pipe-card" data-s="pending" onclick="setStatusFilter('pending')">
-        <div class="pipe-top">
-          <span class="pipe-icon">⏳</span>
-          <span class="pipe-count" id="pc_pending">0</span>
-        </div>
-        <div class="pipe-label" data-t="pipe_pending">Pending</div>
-      </div>
-      <div class="pipe-connector"></div>
-      <div class="pipe-card" data-s="work_performed" onclick="setStatusFilter('work_performed')">
-        <div class="pipe-top">
-          <span class="pipe-icon">✅</span>
-          <span class="pipe-count" id="pc_work_performed">0</span>
-        </div>
-        <div class="pipe-label" data-t="pipe_work">Work Done</div>
-      </div>
-      <div class="pipe-card" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')">
-        <div class="pipe-top">
-          <span class="pipe-icon">🚫</span>
-          <span class="pipe-count" id="pc_no_work">0</span>
-        </div>
-        <div class="pipe-label" data-t="pipe_nowork">No Work</div>
-      </div>
-      <div class="pipe-connector"></div>
-      <div class="pipe-card" data-s="submitted" onclick="setStatusFilter('submitted')">
-        <div class="pipe-top">
-          <span class="pipe-icon">📤</span>
-          <span class="pipe-count" id="pc_submitted">0</span>
-        </div>
-        <div class="pipe-label" data-t="pipe_submitted">Submitted</div>
-      </div>
-      <div class="pipe-connector"></div>
-      <div class="pipe-card" data-s="paid" onclick="setStatusFilter('paid')">
-        <div class="pipe-top">
-          <span class="pipe-icon">💰</span>
-          <span class="pipe-count" id="pc_paid">0</span>
-        </div>
-        <div class="pipe-label" data-t="pipe_paid">Paid</div>
-      </div>
+    <!-- Workflow hint -->
+    <div class="flow-hint">
+      <div class="flow-hint-step"><div class="flow-hint-dot"></div>HPD Issues OMO</div>
+      <div class="flow-hint-arrow">›</div>
+      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Site Visit</div>
+      <div class="flow-hint-arrow">›</div>
+      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Work Done <span style="opacity:.4">or</span> No Work</div>
+      <div class="flow-hint-arrow">›</div>
+      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Print &amp; Sign Docs</div>
+      <div class="flow-hint-arrow">›</div>
+      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Submit to HPD</div>
+      <div class="flow-hint-arrow">›</div>
+      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Paid ✓</div>
     </div>
+
+    <!-- Status pipeline -->
+    <div class="pipeline">
+      <button class="pipe-step active-filter" data-s="all" onclick="setStatusFilter('all')">
+        <div class="pipe-bubble">📋</div>
+        <div class="pipe-count-wrap">
+          <span class="pipe-count" id="pc_all">0</span>
+          <span class="pipe-label" data-t="pipe_all">All</span>
+        </div>
+      </button>
+      <div class="pipe-divider"></div>
+      <button class="pipe-step" data-s="pending" onclick="setStatusFilter('pending')">
+        <div class="pipe-bubble">⏳</div>
+        <div class="pipe-count-wrap">
+          <span class="pipe-count" id="pc_pending">0</span>
+          <span class="pipe-label" data-t="pipe_pending">Pending</span>
+        </div>
+      </button>
+      <div class="pipe-divider"></div>
+      <button class="pipe-step" data-s="work_performed" onclick="setStatusFilter('work_performed')">
+        <div class="pipe-bubble">✅</div>
+        <div class="pipe-count-wrap">
+          <span class="pipe-count" id="pc_work_performed">0</span>
+          <span class="pipe-label" data-t="pipe_work">Work Done</span>
+        </div>
+      </button>
+      <button class="pipe-step" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')">
+        <div class="pipe-bubble">🚫</div>
+        <div class="pipe-count-wrap">
+          <span class="pipe-count" id="pc_no_work">0</span>
+          <span class="pipe-label" data-t="pipe_nowork">No Work</span>
+        </div>
+      </button>
+      <div class="pipe-divider"></div>
+      <button class="pipe-step" data-s="submitted" onclick="setStatusFilter('submitted')">
+        <div class="pipe-bubble">📤</div>
+        <div class="pipe-count-wrap">
+          <span class="pipe-count" id="pc_submitted">0</span>
+          <span class="pipe-label" data-t="pipe_submitted">Submitted</span>
+        </div>
+      </button>
+      <div class="pipe-divider"></div>
+      <button class="pipe-step" data-s="paid" onclick="setStatusFilter('paid')">
+        <div class="pipe-bubble">💰</div>
+        <div class="pipe-count-wrap">
+          <span class="pipe-count" id="pc_paid">0</span>
+          <span class="pipe-label" data-t="pipe_paid">Paid</span>
+        </div>
+      </button>
+    </div>
+    <div class="pipeline-bottom"></div>
   </div>
 
   <!-- ═══════════════════════════ MAIN CONTENT ════════════════════════════════ -->
