@@ -201,164 +201,134 @@ a { color: inherit; text-decoration: none; }
   position: sticky;
   top: var(--header-h);
   z-index: 100;
-  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-/* Flow hint bar */
-.flow-hint {
+/* ── Pipeline flow: horizontal layout con bifurcación ── */
+.pipeline-flow {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 8px 24px 0;
+  padding: 16px 24px 16px;
+  max-width: 1200px;
+  margin: 0 auto;
   overflow-x: auto;
-  max-width: 1100px;
-  margin: 0 auto;
 }
-.flow-hint-step {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: .7rem;
-  color: rgba(255,255,255,.35);
-  font-weight: 500;
-  white-space: nowrap;
-  padding: 0 4px;
-}
-.flow-hint-step.active-hint { color: rgba(255,255,255,.75); font-weight: 700; }
-.flow-hint-arrow {
-  color: rgba(255,255,255,.18);
-  font-size: .8rem;
-  padding: 0 2px;
-  flex-shrink: 0;
-}
-.flow-hint-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.2);
-  flex-shrink: 0;
-}
-.flow-hint-step.active-hint .flow-hint-dot { background: var(--gold-400); }
 
-/* Pipeline steps */
-.pipeline {
+/* Nodo base */
+.pf-node {
   display: flex;
-  align-items: stretch;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 12px 16px 0;
+  flex-direction: column;
+  align-items: center;
   gap: 4px;
-  overflow-x: auto;
-}
-
-.pipe-step {
-  flex: 1;
-  min-width: 90px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
   cursor: pointer;
-  padding: 10px 8px 0;
-  border-radius: var(--radius) var(--radius) 0 0;
-  position: relative;
-  transition: var(--t-base);
-  background: transparent;
   border: none;
-}
-.pipe-step::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 3px;
-  background: transparent;
-  border-radius: 3px 3px 0 0;
+  background: rgba(255,255,255,.05);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 80px;
   transition: var(--t-base);
-}
-.pipe-step:hover { background: rgba(255,255,255,.05); }
-
-/* Active state */
-.pipe-step.active-filter            { background: rgba(255,255,255,.1); }
-.pipe-step[data-s="all"].active-filter::after            { background: var(--navy-400); }
-.pipe-step[data-s="pending"].active-filter::after        { background: var(--status-pending-bd); }
-.pipe-step[data-s="work_performed"].active-filter::after { background: var(--status-work-bd); }
-.pipe-step[data-s="no_work_performed"].active-filter::after { background: var(--status-nowork-bd); }
-.pipe-step[data-s="submitted"].active-filter::after      { background: var(--status-submitted-bd); }
-.pipe-step[data-s="paid"].active-filter::after           { background: var(--status-paid-bd); }
-
-/* Step icon bubble */
-.pipe-bubble {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.08);
-  border: 1.5px solid rgba(255,255,255,.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  transition: var(--t-base);
-  margin-bottom: 6px;
+  position: relative;
+  border: 1.5px solid rgba(255,255,255,.08);
   flex-shrink: 0;
 }
-.pipe-step[data-s="all"]             .pipe-bubble { background: rgba(84,130,184,.25);  border-color: rgba(84,130,184,.4); }
-.pipe-step[data-s="pending"]         .pipe-bubble { background: rgba(100,116,139,.25); border-color: rgba(100,116,139,.4); }
-.pipe-step[data-s="work_performed"]  .pipe-bubble { background: rgba(5,150,105,.25);   border-color: rgba(5,150,105,.4); }
-.pipe-step[data-s="no_work_performed"].pipe-bubble{ background: rgba(220,38,38,.25);   border-color: rgba(220,38,38,.4); }
-.pipe-step[data-s="submitted"]       .pipe-bubble { background: rgba(37,99,235,.25);   border-color: rgba(37,99,235,.4); }
-.pipe-step[data-s="paid"]            .pipe-bubble { background: rgba(217,119,6,.25);   border-color: rgba(217,119,6,.4); }
-
-.pipe-step.active-filter .pipe-bubble {
-  transform: scale(1.1);
-  box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+.pf-node:hover {
+  background: rgba(255,255,255,.1);
+  transform: translateY(-2px);
 }
-.pipe-step[data-s="all"].active-filter             .pipe-bubble { background: rgba(84,130,184,.5);  border-color: var(--navy-400); }
-.pipe-step[data-s="pending"].active-filter         .pipe-bubble { background: rgba(100,116,139,.5); border-color: var(--status-pending-bd); }
-.pipe-step[data-s="work_performed"].active-filter  .pipe-bubble { background: rgba(5,150,105,.5);   border-color: var(--status-work-bd); }
-.pipe-step[data-s="no_work_performed"].active-filter .pipe-bubble{ background: rgba(220,38,38,.5);  border-color: var(--status-nowork-bd); }
-.pipe-step[data-s="submitted"].active-filter       .pipe-bubble { background: rgba(37,99,235,.5);   border-color: var(--status-submitted-bd); }
-.pipe-step[data-s="paid"].active-filter            .pipe-bubble { background: rgba(217,119,6,.5);   border-color: var(--status-paid-bd); }
-
-/* Count & Label */
-.pipe-count-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding-bottom: 10px;
+.pf-node.active-filter {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.3);
 }
-.pipe-count {
-  font-size: 1.4rem;
+
+/* Colores por tipo de nodo */
+.pf-all      { border-color: rgba(84,130,184,.4); }
+.pf-pending  { border-color: rgba(100,116,139,.4); }
+.pf-work     { border-color: rgba(5,150,105,.5); }
+.pf-nowork   { border-color: rgba(220,38,38,.5); }
+.pf-submitted{ border-color: rgba(37,99,235,.5); }
+.pf-paid     { border-color: rgba(217,119,6,.5); }
+
+.pf-all.active-filter      { background: rgba(84,130,184,.2);  border-color: rgba(84,130,184,.8);  box-shadow: 0 6px 20px rgba(84,130,184,.25); }
+.pf-pending.active-filter  { background: rgba(100,116,139,.2); border-color: rgba(100,116,139,.8); box-shadow: 0 6px 20px rgba(100,116,139,.25); }
+.pf-work.active-filter     { background: rgba(5,150,105,.2);   border-color: rgba(5,150,105,.9);   box-shadow: 0 6px 20px rgba(5,150,105,.3); }
+.pf-nowork.active-filter   { background: rgba(220,38,38,.2);   border-color: rgba(220,38,38,.9);   box-shadow: 0 6px 20px rgba(220,38,38,.3); }
+.pf-submitted.active-filter{ background: rgba(37,99,235,.2);   border-color: rgba(37,99,235,.9);   box-shadow: 0 6px 20px rgba(37,99,235,.3); }
+.pf-paid.active-filter     { background: rgba(217,119,6,.2);   border-color: rgba(217,119,6,.9);   box-shadow: 0 6px 20px rgba(217,119,6,.3); }
+
+.pf-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.pf-count {
+  font-size: 1.5rem;
   font-weight: 800;
   color: rgba(255,255,255,.9);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.pipe-label {
-  font-size: .68rem;
+.pf-label {
+  font-size: .62rem;
   font-weight: 600;
   color: rgba(255,255,255,.4);
   text-transform: uppercase;
-  letter-spacing: .6px;
+  letter-spacing: .7px;
   white-space: nowrap;
 }
-.pipe-step.active-filter .pipe-count { color: #fff; }
-.pipe-step.active-filter .pipe-label { color: rgba(255,255,255,.75); }
+.pf-node.active-filter .pf-count { color: #fff; }
+.pf-node.active-filter .pf-label { color: rgba(255,255,255,.8); }
 
-/* Vertical dividers between steps */
-.pipe-divider {
-  width: 1px;
-  background: rgba(255,255,255,.07);
-  align-self: stretch;
-  margin: 10px 0;
+/* Flecha simple entre nodos */
+.pf-arrow {
+  font-size: 1.4rem;
+  color: rgba(255,255,255,.2);
+  padding: 0 6px;
+  flex-shrink: 0;
+  user-select: none;
+  margin-bottom: 2px;
+}
+
+/* ── Bifurcación (fork y merge) ── */
+.pf-fork {
+  width: 44px;
+  height: 72px;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pf-fork-svg {
+  width: 44px;
+  height: 72px;
+}
+
+/* Columna con los dos branches (work arriba, nowork abajo) */
+.pf-branch-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   flex-shrink: 0;
 }
-
-/* Bottom border line */
-.pipeline-bottom {
-  height: 3px;
-  background: rgba(255,255,255,.04);
-  max-width: 100%;
+.pf-branch-col .pf-node {
+  min-width: 90px;
 }
+
+/* Badge "OR" entre los dos branches */
+.pf-branch-col::before {
+  content: 'OR';
+  display: block;
+  text-align: center;
+  font-size: .58rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.2);
+  letter-spacing: 1px;
+  margin: -2px 0;
+  order: 2;
+}
+.pf-branch-col .pf-work  { order: 1; }
+.pf-branch-col .pf-nowork { order: 3; }
 
 /* ── MAIN CONTENT ────────────────────────────────────────────────────────────── */
 .main {
@@ -691,7 +661,7 @@ a { color: inherit; text-decoration: none; }
   align-items: flex-start;
   gap: 12px;
 }
-.modal-header-left {}
+.modal-header-left { flex: 1; }
 .modal-title {
   font-size: 1.05rem;
   font-weight: 800;
@@ -1020,7 +990,12 @@ select.form-control {
 
 @media (max-width: 480px) {
   .btn-new span { display: none; }
-  .pipeline { padding: 8px 8px 0; }
-  .pipe-divider { display: none; }
-  .pipe-bubble { width: 28px; height: 28px; font-size: .8rem; }
+  .pipeline-flow { padding: 10px 8px; gap: 0; }
+  .pf-node { min-width: 60px; padding: 7px 8px; }
+  .pf-icon { font-size: 1rem; }
+  .pf-count { font-size: 1.1rem; }
+  .pf-label { font-size: .52rem; }
+  .pf-fork { width: 28px; }
+  .pf-fork-svg { width: 28px; }
+  .pf-arrow { font-size: 1rem; padding: 0 2px; }
 }

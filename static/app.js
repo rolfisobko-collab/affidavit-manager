@@ -222,7 +222,7 @@ function setLang(l) {
 // ── Pipeline filter ────────────────────────────────────────────────────────────
 function setStatusFilter(s) {
   statusFilter = s;
-  document.querySelectorAll('.pipe-card').forEach(c => {
+  document.querySelectorAll('.pf-node').forEach(c => {
     c.classList.toggle('active-filter', c.dataset.s === s);
   });
   renderAll();

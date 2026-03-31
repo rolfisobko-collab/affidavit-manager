@@ -36,71 +36,75 @@
 
   <!-- ════════════════════════════ PIPELINE ══════════════════════════════════ -->
   <div class="pipeline-wrap">
-    <!-- Workflow hint -->
-    <div class="flow-hint">
-      <div class="flow-hint-step"><div class="flow-hint-dot"></div>HPD Issues OMO</div>
-      <div class="flow-hint-arrow">›</div>
-      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Site Visit</div>
-      <div class="flow-hint-arrow">›</div>
-      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Work Done <span style="opacity:.4">or</span> No Work</div>
-      <div class="flow-hint-arrow">›</div>
-      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Print &amp; Sign Docs</div>
-      <div class="flow-hint-arrow">›</div>
-      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Submit to HPD</div>
-      <div class="flow-hint-arrow">›</div>
-      <div class="flow-hint-step"><div class="flow-hint-dot"></div>Paid ✓</div>
-    </div>
+    <div class="pipeline-flow">
 
-    <!-- Status pipeline -->
-    <div class="pipeline">
-      <button class="pipe-step active-filter" data-s="all" onclick="setStatusFilter('all')">
-        <div class="pipe-bubble">📋</div>
-        <div class="pipe-count-wrap">
-          <span class="pipe-count" id="pc_all">0</span>
-          <span class="pipe-label" data-t="pipe_all">All</span>
-        </div>
+      <!-- ALL -->
+      <button class="pf-node pf-all active-filter" data-s="all" onclick="setStatusFilter('all')">
+        <div class="pf-icon">📋</div>
+        <div class="pf-count" id="pc_all">0</div>
+        <div class="pf-label" data-t="pipe_all">All</div>
       </button>
-      <div class="pipe-divider"></div>
-      <button class="pipe-step" data-s="pending" onclick="setStatusFilter('pending')">
-        <div class="pipe-bubble">⏳</div>
-        <div class="pipe-count-wrap">
-          <span class="pipe-count" id="pc_pending">0</span>
-          <span class="pipe-label" data-t="pipe_pending">Pending</span>
-        </div>
+
+      <div class="pf-arrow">›</div>
+
+      <!-- PENDING -->
+      <button class="pf-node pf-pending" data-s="pending" onclick="setStatusFilter('pending')">
+        <div class="pf-icon">⏳</div>
+        <div class="pf-count" id="pc_pending">0</div>
+        <div class="pf-label" data-t="pipe_pending">Pending</div>
       </button>
-      <div class="pipe-divider"></div>
-      <button class="pipe-step" data-s="work_performed" onclick="setStatusFilter('work_performed')">
-        <div class="pipe-bubble">✅</div>
-        <div class="pipe-count-wrap">
-          <span class="pipe-count" id="pc_work_performed">0</span>
-          <span class="pipe-label" data-t="pipe_work">Work Done</span>
-        </div>
+
+      <!-- FORK -->
+      <div class="pf-fork">
+        <div class="pf-fork-line pf-fork-line-top"></div>
+        <div class="pf-fork-line pf-fork-line-bottom"></div>
+        <svg class="pf-fork-svg" viewBox="0 0 40 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 30 L16 30 L16 10 L40 10" stroke="rgba(5,150,105,.5)"  stroke-width="2" fill="none"/>
+          <path d="M0 30 L16 30 L16 50 L40 50" stroke="rgba(220,38,38,.5)"  stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+
+      <!-- WORK + NOWORK column -->
+      <div class="pf-branch-col">
+        <button class="pf-node pf-work" data-s="work_performed" onclick="setStatusFilter('work_performed')">
+          <div class="pf-icon">✅</div>
+          <div class="pf-count" id="pc_work_performed">0</div>
+          <div class="pf-label" data-t="pipe_work">Work Done</div>
+        </button>
+        <button class="pf-node pf-nowork" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')">
+          <div class="pf-icon">🚫</div>
+          <div class="pf-count" id="pc_no_work">0</div>
+          <div class="pf-label" data-t="pipe_nowork">No Work</div>
+        </button>
+      </div>
+
+      <!-- MERGE -->
+      <div class="pf-fork pf-merge">
+        <svg class="pf-fork-svg" viewBox="0 0 40 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 10 L24 10 L24 30 L40 30" stroke="rgba(5,150,105,.5)"  stroke-width="2" fill="none"/>
+          <path d="M0 50 L24 50 L24 30 L40 30" stroke="rgba(220,38,38,.5)"  stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+
+      <div class="pf-arrow">›</div>
+
+      <!-- SUBMITTED -->
+      <button class="pf-node pf-submitted" data-s="submitted" onclick="setStatusFilter('submitted')">
+        <div class="pf-icon">📤</div>
+        <div class="pf-count" id="pc_submitted">0</div>
+        <div class="pf-label" data-t="pipe_submitted">Submitted</div>
       </button>
-      <button class="pipe-step" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')">
-        <div class="pipe-bubble">🚫</div>
-        <div class="pipe-count-wrap">
-          <span class="pipe-count" id="pc_no_work">0</span>
-          <span class="pipe-label" data-t="pipe_nowork">No Work</span>
-        </div>
+
+      <div class="pf-arrow">›</div>
+
+      <!-- PAID -->
+      <button class="pf-node pf-paid" data-s="paid" onclick="setStatusFilter('paid')">
+        <div class="pf-icon">💰</div>
+        <div class="pf-count" id="pc_paid">0</div>
+        <div class="pf-label" data-t="pipe_paid">Paid</div>
       </button>
-      <div class="pipe-divider"></div>
-      <button class="pipe-step" data-s="submitted" onclick="setStatusFilter('submitted')">
-        <div class="pipe-bubble">📤</div>
-        <div class="pipe-count-wrap">
-          <span class="pipe-count" id="pc_submitted">0</span>
-          <span class="pipe-label" data-t="pipe_submitted">Submitted</span>
-        </div>
-      </button>
-      <div class="pipe-divider"></div>
-      <button class="pipe-step" data-s="paid" onclick="setStatusFilter('paid')">
-        <div class="pipe-bubble">💰</div>
-        <div class="pipe-count-wrap">
-          <span class="pipe-count" id="pc_paid">0</span>
-          <span class="pipe-label" data-t="pipe_paid">Paid</span>
-        </div>
-      </button>
+
     </div>
-    <div class="pipeline-bottom"></div>
   </div>
 
   <!-- ═══════════════════════════ MAIN CONTENT ════════════════════════════════ -->
@@ -325,7 +329,7 @@
       </div>
 
       <!-- ── NO WORK SECTION ── -->
-      <div id="noworkSection" style="display:none;contents:none">
+      <div id="noworkSection" style="display:none">
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label" data-t="lbl_service_charge">Service Charge ($)</label>
