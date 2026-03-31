@@ -513,8 +513,10 @@ a { color: inherit; text-decoration: none; }
 .act-nowork    { background: var(--status-nowork-bg); color: var(--status-nowork); border-color: var(--status-nowork-bd); }
 .act-submit    { background: var(--status-submitted-bg); color: var(--status-submitted); border-color: var(--status-submitted-bd); }
 .act-paid      { background: var(--status-paid-bg); color: var(--status-paid); border-color: var(--status-paid-bd); }
-.act-dl        { background: #f3e8ff; color: #7c3aed; border-color: #ddd6fe; }
-.act-zip       { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+.act-dl        { background: #f3e8ff; color: #7c3aed; border-color: #c4b5fd; font-weight: 700; }
+.act-dl:hover  { background: #ede9fe; box-shadow: 0 2px 8px rgba(124,58,237,.2); }
+.act-zip       { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; font-weight: 700; }
+.act-zip:hover { background: #bae6fd; box-shadow: 0 2px 8px rgba(3,105,161,.2); }
 .act-edit      { background: var(--navy-50); color: var(--navy-700); border-color: var(--navy-200); }
 .act-danger    { background: var(--status-nowork-bg); color: var(--status-nowork); border-color: var(--status-nowork-bd); }
 

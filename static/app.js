@@ -80,7 +80,7 @@ const LANG = {
     action_mark_nowork: '🚫 Mark No Work',
     action_submit: '📤 Submit to HPD',
     action_paid: '💰 Mark Paid',
-    action_aff: 'Affidavit', action_inv: 'Invoice', action_zip: 'All Docs',
+    action_aff: 'Print Affidavit', action_inv: 'Print Invoice', action_zip: 'Download All',
     action_edit: 'Edit', action_del: 'Delete',
     // Toast
     toast_saved: 'Service saved successfully',
@@ -161,7 +161,7 @@ const LANG = {
     action_mark_nowork: '🚫 Sin Trabajo',
     action_submit: '📤 Enviar a HPD',
     action_paid: '💰 Marcar Pagado',
-    action_aff: 'Affidavit', action_inv: 'Factura', action_zip: 'Todo (ZIP)',
+    action_aff: 'Imprimir Affidavit', action_inv: 'Imprimir Factura', action_zip: 'Descargar Todo',
     action_edit: 'Editar', action_del: 'Eliminar',
     toast_saved: 'Servicio guardado correctamente',
     toast_deleted: 'Servicio eliminado',
@@ -521,27 +521,27 @@ function renderAll() {
       r.invoice_number ? `<span class="meta-chip">🧾 #${esc(r.invoice_number)}</span>` : '',
     ].filter(Boolean).join('');
 
-    // Context actions
-    const actions = [];
+    // ── Acciones de descarga/impresión: SIEMPRE disponibles ────────────────────
+    // Los PDFs se generan escribiendo sobre los templates provistos.
+    const actions = [
+      `<button class="act-btn act-dl"  onclick="dlPdf(${r.id},'affidavit')" title="${t('action_aff')}">📋 ${t('action_aff')}</button>`,
+      `<button class="act-btn act-dl"  onclick="dlPdf(${r.id},'invoice')"   title="${t('action_inv')}">🧾 ${t('action_inv')}</button>`,
+      `<button class="act-btn act-zip" onclick="dlPdf(${r.id},'zip')"       title="${t('action_zip')}">📦 ${t('action_zip')}</button>`,
+    ];
+
+    // ── Acciones de workflow: según estado ─────────────────────────────────────
     if (r.status === 'pending') {
-      actions.push(`<button class="act-btn act-work" onclick="setStatus(${r.id},'work_performed')">${t('action_mark_work')}</button>`);
+      actions.push(`<button class="act-btn act-work"   onclick="setStatus(${r.id},'work_performed')">${t('action_mark_work')}</button>`);
       actions.push(`<button class="act-btn act-nowork" onclick="setStatus(${r.id},'no_work_performed')">${t('action_mark_nowork')}</button>`);
     }
     if (r.status === 'work_performed' || r.status === 'no_work_performed') {
-      actions.push(`<button class="act-btn act-dl" onclick="dlPdf(${r.id},'affidavit')" title="${t('action_aff')}">📋 ${t('action_aff')}</button>`);
-      actions.push(`<button class="act-btn act-dl" onclick="dlPdf(${r.id},'invoice')"   title="${t('action_inv')}">🧾 ${t('action_inv')}</button>`);
-      actions.push(`<button class="act-btn act-zip" onclick="dlPdf(${r.id},'zip')"      title="${t('action_zip')}">📦 ${t('action_zip')}</button>`);
       actions.push(`<button class="act-btn act-submit" onclick="setStatus(${r.id},'submitted')">${t('action_submit')}</button>`);
     }
     if (r.status === 'submitted') {
-      actions.push(`<button class="act-btn act-dl"  onclick="dlPdf(${r.id},'affidavit')">📋 ${t('action_aff')}</button>`);
-      actions.push(`<button class="act-btn act-dl"  onclick="dlPdf(${r.id},'invoice')}">🧾 ${t('action_inv')}</button>`);
       actions.push(`<button class="act-btn act-paid" onclick="setStatus(${r.id},'paid')">${t('action_paid')}</button>`);
     }
-    if (r.status === 'paid') {
-      actions.push(`<button class="act-btn act-zip" onclick="dlPdf(${r.id},'zip')">📦 ${t('action_zip')}</button>`);
-    }
-    actions.push(`<button class="act-btn act-edit" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">${t('action_edit')}</button>`);
+
+    actions.push(`<button class="act-btn act-edit"   onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">${t('action_edit')}</button>`);
     actions.push(`<button class="act-btn act-danger" onclick="deleteService(${r.id})">${t('action_del')}</button>`);
 
     return `
