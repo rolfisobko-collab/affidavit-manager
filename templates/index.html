@@ -1,949 +1,471 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HPD Service Manager — LB & J Construction</title>
-<style>
-:root{
-  --brand:#1a3c6e;--brand-light:#2656a0;--brand-dark:#102548;
-  --accent:#e8a020;--accent-dark:#c8881a;
-  --bg:#eef2f7;--surface:#fff;--border:#d0dae8;
-  --text:#1a2332;--muted:#6b7a90;
-  --pending:#9e9e9e;--pending-bg:#f5f5f5;
-  --work:#2e7d32;--work-bg:#e8f5e9;
-  --nowork:#c62828;--nowork-bg:#fdecea;
-  --submitted:#1565c0;--submitted-bg:#e3f2fd;
-  --paid:#e65100;--paid-bg:#fff8e1;
-  --radius:10px;--shadow:0 2px 12px rgba(26,60,110,.10);--shadow-lg:0 8px 32px rgba(26,60,110,.18);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-
-/* ─ HEADER ─ */
-header{background:var(--brand);color:#fff;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.22);position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem}
-.logo-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
-.logo-sub{font-size:.72rem;color:rgba(255,255,255,.6);font-weight:400;margin-top:1px}
-.header-right{display:flex;align-items:center;gap:10px}
-.lang-btn{background:transparent;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.75);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:.78rem;transition:.2s}
-.lang-btn.active,.lang-btn:hover{background:rgba(255,255,255,.18);color:#fff}
-.btn-new{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.85rem;transition:.2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
-.btn-new:hover{background:var(--accent-dark);transform:translateY(-1px)}
-
-/* ─ PIPELINE ─ */
-.pipeline{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:0;overflow-x:auto}
-.pipe-step{display:flex;align-items:center;gap:0;flex:1;min-width:0}
-.pipe-node{display:flex;flex-direction:column;align-items:center;flex:1;min-width:80px;cursor:pointer;padding:6px 4px;border-radius:8px;transition:.2s}
-.pipe-node:hover{background:#f0f4f8}
-.pipe-node.active-filter{background:#ebf1fb}
-.pipe-dot{width:28px;height:28px;border-radius:50%;border:3px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.2s;flex-shrink:0}
-.pipe-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:4px;text-align:center}
-.pipe-count{font-size:.75rem;font-weight:700;color:var(--muted)}
-.pipe-node[data-s="pending"] .pipe-dot{border-color:var(--pending);background:var(--pending-bg)}
-.pipe-node[data-s="work_performed"] .pipe-dot{border-color:var(--work);background:var(--work-bg)}
-.pipe-node[data-s="no_work_performed"] .pipe-dot{border-color:var(--nowork);background:var(--nowork-bg)}
-.pipe-node[data-s="submitted"] .pipe-dot{border-color:var(--submitted);background:var(--submitted-bg)}
-.pipe-node[data-s="paid"] .pipe-dot{border-color:var(--paid);background:var(--paid-bg)}
-.pipe-arrow{color:var(--border);font-size:1.2rem;flex-shrink:0;padding:0 2px}
-
-/* ─ MAIN ─ */
-main{max-width:1140px;margin:0 auto;padding:20px 16px}
-
-/* ─ TOOLBAR ─ */
-.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.search-wrap{flex:1;min-width:200px;position:relative}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
-.search-wrap input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;background:var(--surface);color:var(--text);transition:.2s}
-.search-wrap input:focus{outline:none;border-color:var(--brand-light);box-shadow:0 0 0 3px rgba(38,86,160,.1)}
-.filter-select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;background:var(--surface);color:var(--text);cursor:pointer}
-
-/* ─ TABLE CARD ─ */
-.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-thead tr{background:var(--brand-dark)}
-th{padding:11px 14px;text-align:left;font-size:.75rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.85);white-space:nowrap}
-td{padding:12px 14px;border-bottom:1px solid #f0f4f8;font-size:.87rem;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tbody tr:hover{background:#f8fafd}
-
-/* ─ STATUS BADGES ─ */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.73rem;font-weight:700;white-space:nowrap}
-.badge-pending{background:var(--pending-bg);color:var(--pending)}
-.badge-work_performed{background:var(--work-bg);color:var(--work)}
-.badge-no_work_performed{background:var(--nowork-bg);color:var(--nowork)}
-.badge-submitted{background:var(--submitted-bg);color:var(--submitted)}
-.badge-paid{background:var(--paid-bg);color:var(--paid)}
-.omo-cell{font-weight:700;color:var(--brand);font-family:monospace;font-size:.9rem}
-
-/* ─ ACTION BUTTONS ─ */
-.actions{display:flex;gap:5px;flex-wrap:wrap}
-.btn-icon{height:30px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;transition:.2s;padding:0 8px;gap:3px;white-space:nowrap}
-.btn-icon span{font-size:.72rem;font-weight:600}
-.btn-edit{background:#e8f0fe;color:#1a3c6e}.btn-edit:hover{background:#c5d5f8}
-.btn-del{background:#fdecea;color:var(--nowork)}.btn-del:hover{background:#f7c5c0}
-.btn-work{background:var(--work-bg);color:var(--work)}.btn-work:hover{background:#c8e6c9}
-.btn-nowork{background:var(--nowork-bg);color:var(--nowork)}.btn-nowork:hover{background:#ffcccc}
-.btn-submit{background:var(--submitted-bg);color:var(--submitted)}.btn-submit:hover{background:#bbdefb}
-.btn-paid{background:var(--paid-bg);color:var(--paid)}.btn-paid:hover{background:#ffe0b2}
-.btn-dl{background:#f3e5f5;color:#6a1b9a}.btn-dl:hover{background:#e1bee7}
-.btn-zip{background:#e8eaf6;color:#283593}.btn-zip:hover{background:#c5cae9}
-.empty{text-align:center;padding:56px 16px;color:var(--muted)}
-.empty-icon{font-size:3.5rem;margin-bottom:12px;opacity:.4}
-
-/* ─ MODAL ─ */
-.overlay{position:fixed;inset:0;background:rgba(10,20,40,.58);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
-.overlay.open{display:flex}
-.modal{background:var(--surface);border-radius:14px;width:100%;max-width:760px;box-shadow:var(--shadow-lg);animation:slideUp .22s ease;margin:auto}
-@keyframes slideUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modal-header{background:var(--brand);color:#fff;padding:16px 22px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center}
-.modal-title{font-size:1rem;font-weight:700}
-.btn-close{background:transparent;border:none;color:rgba(255,255,255,.7);font-size:1.3rem;cursor:pointer;padding:2px 6px;border-radius:4px}
-.btn-close:hover{background:rgba(255,255,255,.15);color:#fff}
-
-/* ─ TABS ─ */
-.tabs{display:flex;background:#f5f8fc;border-bottom:1px solid var(--border)}
-.tab{flex:1;padding:12px 6px;border:none;background:transparent;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--muted);transition:.2s;border-bottom:3px solid transparent;text-transform:uppercase;letter-spacing:.5px}
-.tab.active{color:var(--brand);border-bottom-color:var(--brand);background:#fff}
-.tab:hover:not(.active){color:var(--brand-light)}
-.tab-content{display:none;padding:20px 22px}
-.tab-content.active{display:block}
-
-/* ─ FORM ─ */
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.form-grid.cols3{grid-template-columns:1fr 1fr 1fr}
-.form-group{display:flex;flex-direction:column;gap:5px}
-.form-group.full{grid-column:1/-1}
-label{font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-input,select,textarea{padding:9px 11px;border:1px solid var(--border);border-radius:7px;font-size:.88rem;color:var(--text);background:#fff;transition:.2s;font-family:inherit}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand-light);box-shadow:0 0 0 3px rgba(38,86,160,.1)}
-
-.section-divider{grid-column:1/-1;font-size:.74rem;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.7px;padding:10px 0 6px;border-bottom:2px solid #e8f0fe;margin-top:4px}
-
-/* Doc type toggle */
-.doctype-bar{display:flex;background:#f0f4f8;border-radius:9px;padding:4px;grid-column:1/-1}
-.doctype-btn{flex:1;padding:10px;border:none;background:transparent;cursor:pointer;border-radius:6px;font-weight:700;font-size:.87rem;transition:.2s;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
-.doctype-btn.active-work{background:#fff;color:var(--work);box-shadow:0 1px 5px rgba(0,0,0,.1)}
-.doctype-btn.active-nowork{background:#fff;color:var(--nowork);box-shadow:0 1px 5px rgba(0,0,0,.1)}
-
-/* Reason pills */
-.reason-pills{display:flex;flex-wrap:wrap;gap:7px;grid-column:1/-1}
-.pill{padding:7px 14px;border:2px solid var(--border);border-radius:20px;cursor:pointer;background:#fff;font-size:.82rem;font-weight:600;transition:.2s;color:var(--muted)}
-.pill.active-work{border-color:var(--work);color:var(--work);background:var(--work-bg)}
-.pill.active-nowork{border-color:var(--nowork);color:var(--nowork);background:var(--nowork-bg)}
-.pill:hover{border-color:var(--brand-light)}
-
-/* Mat rows */
-.mat-table{width:100%;border-collapse:collapse;margin-top:4px}
-.mat-table th{font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:5px 6px;text-align:left;border-bottom:1px solid var(--border)}
-.mat-table td{padding:4px 4px}
-.mat-table input{width:100%;padding:7px 8px;font-size:.84rem}
-.mat-table .qty-col{width:70px}
-
-/* ─ MODAL FOOTER ─ */
-.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:#fafbfd;border-radius:0 0 14px 14px}
-.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:600;font-size:.86rem;transition:.2s}
-.btn-cancel:hover{border-color:var(--brand);color:var(--brand)}
-.btn-save{background:var(--brand);color:#fff;border:none;padding:9px 26px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.86rem;transition:.2s}
-.btn-save:hover{background:var(--brand-light)}
-.btn-save:disabled{opacity:.5;cursor:not-allowed}
-
-/* ─ INFO BOX ─ */
-.info-box{background:#f0f6ff;border-left:4px solid var(--brand-light);border-radius:0 8px 8px 0;padding:12px 14px;font-size:.83rem;color:var(--muted);line-height:1.55;grid-column:1/-1}
-.info-box strong{color:var(--brand)}
-
-/* ─ TOAST ─ */
-#toast{position:fixed;bottom:24px;right:24px;background:#1a3c6e;color:#fff;padding:11px 18px;border-radius:10px;font-size:.86rem;font-weight:500;box-shadow:var(--shadow-lg);z-index:999;transform:translateY(100px);opacity:0;transition:.3s;pointer-events:none}
-#toast.show{transform:translateY(0);opacity:1}
-#toast.err{background:var(--nowork)}
-#toast.ok{background:var(--work)}
-
-/* ─ RESPONSIVE ─ */
-@media(max-width:640px){
-  header{padding:0 12px}
-  .logo-sub{display:none}
-  .pipeline{padding:10px 12px}
-  .pipe-label{font-size:.65rem}
-  th:nth-child(n+4),td:nth-child(n+4):not(:last-child){display:none}
-  .modal{border-radius:14px 14px 0 0;position:fixed;bottom:0;max-width:100%;margin:0}
-  .overlay{padding:0;align-items:flex-end}
-  .form-grid{grid-template-columns:1fr}
-  .form-grid.cols3{grid-template-columns:1fr 1fr}
-  .reason-pills{gap:5px}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HPD Service Manager — LB &amp; J Construction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-icon">🏗️</div>
-    <div>
-      <div data-t="app_title">HPD Service Manager</div>
+<!-- ═══════════════════════════════════ HEADER ══════════════════════════════ -->
+<header class="header">
+  <div class="header-logo">
+    <div class="logo-mark">🏗️</div>
+    <div class="logo-text">
+      <div class="logo-title" data-t="app_title">HPD Service Manager</div>
       <div class="logo-sub">LB &amp; J Construction Inc.</div>
     </div>
   </div>
   <div class="header-right">
-    <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" id="btnES" onclick="setLang('es')">ES</button>
-    <button class="btn-new" onclick="openModal()">＋ <span data-t="new_service">New OMO</span></button>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="btnES" onclick="setLang('es')">ES</button>
+    </div>
+    <button class="btn-new" onclick="openModal()">
+      <span>＋</span>
+      <span data-t="new_btn">New OMO</span>
+    </button>
   </div>
 </header>
 
-<!-- PIPELINE BAR -->
-<div class="pipeline" id="pipeline">
-  <div class="pipe-step">
-    <div class="pipe-node" data-s="all" onclick="setStatusFilter('all')" id="pn_all">
-      <div class="pipe-dot" style="border-color:var(--brand-light)">📋</div>
-      <div class="pipe-label" data-t="all_label">All</div>
-      <div class="pipe-count" id="pc_all">0</div>
+<div class="page-body">
+
+  <!-- ════════════════════════════ PIPELINE ══════════════════════════════════ -->
+  <div class="pipeline-wrap">
+    <div class="pipeline">
+      <div class="pipe-card active-filter" data-s="all" onclick="setStatusFilter('all')">
+        <div class="pipe-top">
+          <span class="pipe-icon">📋</span>
+          <span class="pipe-count" id="pc_all">0</span>
+        </div>
+        <div class="pipe-label" data-t="pipe_all">All</div>
+      </div>
+      <div class="pipe-connector"></div>
+      <div class="pipe-card" data-s="pending" onclick="setStatusFilter('pending')">
+        <div class="pipe-top">
+          <span class="pipe-icon">⏳</span>
+          <span class="pipe-count" id="pc_pending">0</span>
+        </div>
+        <div class="pipe-label" data-t="pipe_pending">Pending</div>
+      </div>
+      <div class="pipe-connector"></div>
+      <div class="pipe-card" data-s="work_performed" onclick="setStatusFilter('work_performed')">
+        <div class="pipe-top">
+          <span class="pipe-icon">✅</span>
+          <span class="pipe-count" id="pc_work_performed">0</span>
+        </div>
+        <div class="pipe-label" data-t="pipe_work">Work Done</div>
+      </div>
+      <div class="pipe-card" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')">
+        <div class="pipe-top">
+          <span class="pipe-icon">🚫</span>
+          <span class="pipe-count" id="pc_no_work">0</span>
+        </div>
+        <div class="pipe-label" data-t="pipe_nowork">No Work</div>
+      </div>
+      <div class="pipe-connector"></div>
+      <div class="pipe-card" data-s="submitted" onclick="setStatusFilter('submitted')">
+        <div class="pipe-top">
+          <span class="pipe-icon">📤</span>
+          <span class="pipe-count" id="pc_submitted">0</span>
+        </div>
+        <div class="pipe-label" data-t="pipe_submitted">Submitted</div>
+      </div>
+      <div class="pipe-connector"></div>
+      <div class="pipe-card" data-s="paid" onclick="setStatusFilter('paid')">
+        <div class="pipe-top">
+          <span class="pipe-icon">💰</span>
+          <span class="pipe-count" id="pc_paid">0</span>
+        </div>
+        <div class="pipe-label" data-t="pipe_paid">Paid</div>
+      </div>
     </div>
   </div>
-  <div class="pipe-arrow">›</div>
-  <div class="pipe-step">
-    <div class="pipe-node" data-s="pending" onclick="setStatusFilter('pending')" id="pn_pending">
-      <div class="pipe-dot">⏳</div>
-      <div class="pipe-label" data-t="status_pending">Pending</div>
-      <div class="pipe-count" id="pc_pending">0</div>
+
+  <!-- ═══════════════════════════ MAIN CONTENT ════════════════════════════════ -->
+  <main class="main">
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input id="searchInput" type="text" placeholder="Search OMO#, address, county…" oninput="renderAll()">
+      </div>
+      <select id="filterType" onchange="renderAll()">
+        <option value="" data-t="filter_all">All Types</option>
+        <option value="work" data-t="filter_work">Work Performed</option>
+        <option value="nowork" data-t="filter_nowork">No Work Performed</option>
+      </select>
     </div>
-  </div>
-  <div class="pipe-arrow">›</div>
-  <div class="pipe-step">
-    <div class="pipe-node" data-s="work_performed" onclick="setStatusFilter('work_performed')" id="pn_work_performed">
-      <div class="pipe-dot">✅</div>
-      <div class="pipe-label" data-t="status_work">Work Done</div>
-      <div class="pipe-count" id="pc_work_performed">0</div>
+
+    <div class="services-grid" id="servicesContainer">
+      <!-- Skeleton loading -->
+      <div class="skeleton-card">
+        <div class="skeleton sk-block" style="width:80px"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div class="skeleton sk-block" style="width:60%;height:16px"></div>
+          <div class="skeleton sk-block" style="width:40%"></div>
+        </div>
+        <div class="skeleton sk-block" style="width:90px;height:24px;border-radius:99px"></div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton sk-block" style="width:80px"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div class="skeleton sk-block" style="width:50%;height:16px"></div>
+          <div class="skeleton sk-block" style="width:35%"></div>
+        </div>
+        <div class="skeleton sk-block" style="width:90px;height:24px;border-radius:99px"></div>
+      </div>
     </div>
-  </div>
-  <div class="pipe-step">
-    <div class="pipe-node" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')" id="pn_no_work_performed">
-      <div class="pipe-dot">🚫</div>
-      <div class="pipe-label" data-t="status_nowork">No Work</div>
-      <div class="pipe-count" id="pc_no_work_performed">0</div>
-    </div>
-  </div>
-  <div class="pipe-arrow">›</div>
-  <div class="pipe-step">
-    <div class="pipe-node" data-s="submitted" onclick="setStatusFilter('submitted')" id="pn_submitted">
-      <div class="pipe-dot">📤</div>
-      <div class="pipe-label" data-t="status_submitted">Submitted</div>
-      <div class="pipe-count" id="pc_submitted">0</div>
-    </div>
-  </div>
-  <div class="pipe-arrow">›</div>
-  <div class="pipe-step">
-    <div class="pipe-node" data-s="paid" onclick="setStatusFilter('paid')" id="pn_paid">
-      <div class="pipe-dot">💰</div>
-      <div class="pipe-label" data-t="status_paid">Paid</div>
-      <div class="pipe-count" id="pc_paid">0</div>
-    </div>
-  </div>
+  </main>
 </div>
 
-<main>
-  <div class="toolbar">
-    <div class="search-wrap">
-      <span class="search-icon">🔍</span>
-      <input id="searchInput" type="text" placeholder="Search OMO#, address, county…" oninput="renderAll()">
-    </div>
-    <select class="filter-select" id="filterType" onchange="renderAll()">
-      <option value="" data-t="all_types">All Doc Types</option>
-      <option value="work" data-t="type_work">Work Performed</option>
-      <option value="nowork" data-t="type_nowork">No Work Performed</option>
-    </select>
-  </div>
-
-  <div class="card">
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th data-t="th_omo">OMO #</th>
-          <th data-t="th_status">Status</th>
-          <th data-t="th_address">Building Address</th>
-          <th data-t="th_county">County</th>
-          <th data-t="th_date">Date</th>
-          <th data-t="th_amount">Amount</th>
-          <th data-t="th_actions">Actions</th>
-        </tr></thead>
-        <tbody id="tableBody">
-          <tr><td colspan="7" class="empty"><div class="empty-icon">📋</div><div data-t="loading">Loading…</div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</main>
-
-<!-- MODAL -->
+<!-- ═══════════════════════════════════ MODAL ══════════════════════════════════ -->
 <div class="overlay" id="overlay" onclick="overlayClick(event)">
 <div class="modal" id="modal">
+
+  <!-- Header -->
   <div class="modal-header">
-    <span class="modal-title" id="modalTitle" data-t="new_service">New OMO Service</span>
-    <button class="btn-close" onclick="closeModal()">✕</button>
-  </div>
-  <div>
-    <div class="tabs" id="modalTabs">
-      <button class="tab active" onclick="switchTab(0)" data-t="tab_job">Job Info</button>
-      <button class="tab" onclick="switchTab(1)" data-t="tab_outcome">Outcome</button>
-      <button class="tab" onclick="switchTab(2)" data-t="tab_invoice">Invoice</button>
-      <button class="tab" onclick="switchTab(3)" data-t="tab_notary">Notary</button>
+    <div class="modal-header-left">
+      <div class="modal-title" id="modalTitle">New OMO Service</div>
+      <div class="modal-sub"   id="modalSub">Fill in the details for this Open Market Order</div>
     </div>
+    <button class="btn-close" onclick="closeModal()" aria-label="Close">✕</button>
+  </div>
 
-    <!-- TAB 0: JOB INFO -->
-    <div class="tab-content active" id="tab0">
-      <div class="form-grid">
-        <div class="form-group">
-          <label data-t="lbl_omo">OMO Number</label>
-          <input id="omo_number" placeholder="e.g. EQ20025">
-        </div>
-        <div class="form-group">
-          <label data-t="lbl_status">Initial Status</label>
-          <select id="status">
-            <option value="pending">⏳ Pending (site visit scheduled)</option>
-            <option value="work_performed">✅ Work Performed</option>
-            <option value="no_work_performed">🚫 No Work Performed</option>
-          </select>
-        </div>
-        <div class="form-group full">
-          <label data-t="lbl_address">Building Address</label>
-          <input id="building_address" placeholder="e.g. 227 Cherry Street, New York NY 10002">
-        </div>
-        <div class="form-group">
-          <label data-t="lbl_apt">Work Location / Apt</label>
-          <input id="work_location_apt" placeholder="e.g. Apt. 11C">
-        </div>
-        <div class="form-group">
-          <label data-t="lbl_county">County</label>
-          <select id="county" onchange="autoBoroughFromCounty()">
-            <option value="">— Select county —</option>
-            <option value="Kings">Kings (Brooklyn)</option>
-            <option value="New York">New York (Manhattan)</option>
-            <option value="Bronx">Bronx</option>
-            <option value="Queens">Queens</option>
-            <option value="Richmond">Richmond (Staten Island)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label data-t="lbl_borough">Borough</label>
-          <select id="borough">
-            <option value="">— Auto from county —</option>
-            <option value="Brooklyn">Brooklyn</option>
-            <option value="Manhattan">Manhattan</option>
-            <option value="Bronx">Bronx</option>
-            <option value="Queens">Queens</option>
-            <option value="Staten Island">Staten Island</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label data-t="lbl_trade">Trade</label>
-          <input id="trade" placeholder="e.g. Carpentry, Plumbing">
-        </div>
-        <div class="form-group">
-          <label data-t="lbl_date_directed">Date Directed</label>
-          <input id="date_directed" placeholder="MM/DD/YYYY">
-        </div>
+  <!-- Step bar -->
+  <div class="step-bar">
+    <div class="step-item active" onclick="goTab(0)">
+      <div class="step-dot">1</div>
+      <div class="step-label" data-t="step_job">Job Info</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" onclick="goTab(1)">
+      <div class="step-dot">2</div>
+      <div class="step-label" data-t="step_outcome">Outcome</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" onclick="goTab(2)">
+      <div class="step-dot">3</div>
+      <div class="step-label" data-t="step_invoice">Invoice</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" onclick="goTab(3)">
+      <div class="step-dot">4</div>
+      <div class="step-label" data-t="step_notary">Notary</div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── TAB 0: JOB INFO ─────────────────── -->
+  <div class="tab-content active" id="tab0">
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_omo">OMO Number</label>
+        <input id="omo_number" class="form-control" placeholder="e.g. EQ20025">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_status">Current Status</label>
+        <select id="status" class="form-control">
+          <option value="pending">⏳ Pending</option>
+          <option value="work_performed">✅ Work Performed</option>
+          <option value="no_work_performed">🚫 No Work Performed</option>
+          <option value="submitted">📤 Submitted</option>
+          <option value="paid">💰 Paid</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label class="form-label" data-t="lbl_address">Building Address</label>
+        <input id="building_address" class="form-control" placeholder="e.g. 227 Cherry Street, New York NY 10002">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_apt">Work Location / Apt</label>
+        <input id="work_location_apt" class="form-control" placeholder="e.g. Apt. 11C">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_date_directed">Date Directed by HPD</label>
+        <input id="date_directed" class="form-control" placeholder="MM/DD/YYYY">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_county">County</label>
+        <select id="county" class="form-control" onchange="autoBoroughFromCounty()">
+          <option value="" data-t="opt_county_0">— Select county —</option>
+          <option value="Kings" data-t="opt_county_kings">Kings (Brooklyn)</option>
+          <option value="New York" data-t="opt_county_ny">New York (Manhattan)</option>
+          <option value="Bronx" data-t="opt_county_bronx">Bronx</option>
+          <option value="Queens" data-t="opt_county_queens">Queens</option>
+          <option value="Richmond" data-t="opt_county_richmond">Richmond (Staten Island)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_borough">Borough</label>
+        <select id="borough" class="form-control">
+          <option value="" data-t="opt_borough_0">— Auto from county —</option>
+          <option value="Brooklyn">Brooklyn</option>
+          <option value="Manhattan">Manhattan</option>
+          <option value="Bronx">Bronx</option>
+          <option value="Queens">Queens</option>
+          <option value="Staten Island">Staten Island</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label class="form-label" data-t="lbl_trade">Trade / Type of Work</label>
+        <input id="trade" class="form-control" placeholder="e.g. Carpentry, Plumbing, Electric">
       </div>
     </div>
+  </div>
 
-    <!-- TAB 1: OUTCOME / AFFIDAVIT -->
-    <div class="tab-content" id="tab1">
-      <div class="form-grid">
-        <!-- Doc type -->
-        <div class="doctype-bar">
-          <button class="doctype-btn active-work" id="btnWork" onclick="setDocType('work')">
-            ✅ <span data-t="work_performed">Work Performed</span>
-          </button>
-          <button class="doctype-btn" id="btnNoWork" onclick="setDocType('nowork')">
-            🚫 <span data-t="no_work_performed">No Work Performed</span>
-          </button>
-        </div>
+  <!-- ─────────────────── TAB 1: OUTCOME ─────────────────── -->
+  <div class="tab-content" id="tab1">
+    <div class="form-grid">
 
-        <!-- WORK fields -->
-        <div id="workFields" style="display:contents">
-          <div class="form-group">
-            <label data-t="lbl_work_start">Work Start Date</label>
-            <input id="work_start_date" placeholder="MM/DD/YYYY">
-          </div>
-          <div class="form-group">
-            <label data-t="lbl_work_end">Work End Date</label>
-            <input id="work_end_date" placeholder="MM/DD/YYYY">
-          </div>
-
-          <div class="section-divider" data-t="sec_work_type">Work Type (answer 6, 7 or 8)</div>
-          <div class="reason-pills">
-            <button class="pill active-work" id="wt_ALL" onclick="setWorkType('ALL')" data-t="wt_all">6 · ALL Work Completed</button>
-            <button class="pill" id="wt_PARTIAL" onclick="setWorkType('PARTIAL')" data-t="wt_partial">7 · PARTIAL Work</button>
-            <button class="pill" id="wt_INTERRUPTED" onclick="setWorkType('INTERRUPTED')" data-t="wt_interrupted">8 · INTERRUPTED by Owner</button>
-          </div>
-
-          <div id="wFields_PARTIAL" style="display:none;contents:none">
-            <div class="form-grid" style="margin-top:12px">
-              <div class="form-group full">
-                <label data-t="lbl_partial_reason">Reason for partial work</label>
-                <input id="partial_reason" placeholder="Describe reason…">
-              </div>
-              <div class="form-group">
-                <label data-t="lbl_partial_amount">Partial Amount ($)</label>
-                <input id="partial_amount" placeholder="0.00">
-              </div>
-            </div>
-          </div>
-
-          <div id="wFields_INTERRUPTED" style="display:none;contents:none">
-            <div class="form-grid" style="margin-top:12px">
-              <div class="form-group">
-                <label data-t="lbl_interrupted_amount">Amount ($)</label>
-                <input id="interrupted_amount" placeholder="0.00">
-              </div>
-              <div class="section-divider" data-t="sec_prevented">Individual who prevented work (Page 2)</div>
-              <div class="form-group">
-                <label data-t="lbl_prev_name">Name</label>
-                <input id="prevented_name" placeholder="Full name">
-              </div>
-              <div class="form-group">
-                <label data-t="lbl_prev_rel">Relationship to building</label>
-                <input id="prevented_rel" placeholder="e.g. Owner, Tenant">
-              </div>
-              <div class="form-group full">
-                <label data-t="lbl_prev_desc">Description</label>
-                <input id="prevented_desc" placeholder="e.g. Male, tall, gray hair">
-              </div>
-            </div>
+      <!-- Doc type toggle -->
+      <div class="doctype-toggle">
+        <div class="doctype-opt active-work" id="dtWork" onclick="setDocType('work')">
+          <span class="doctype-icon">✅</span>
+          <div>
+            <div class="doctype-label" data-t="doctype_work_label">Work Performed</div>
+            <div class="doctype-desc" data-t="doctype_work_desc">Contractor completed repair work</div>
           </div>
         </div>
+        <div class="doctype-opt" id="dtNoWork" onclick="setDocType('nowork')">
+          <span class="doctype-icon">🚫</span>
+          <div>
+            <div class="doctype-label" data-t="doctype_nowork_label">No Work Performed</div>
+            <div class="doctype-desc" data-t="doctype_nowork_desc">Contractor could not perform work</div>
+          </div>
+        </div>
+      </div>
 
-        <!-- NO WORK fields -->
-        <div id="noworkFields" style="display:none;contents:none">
-          <div class="form-grid" style="margin-top:0">
+      <!-- ── WORK SECTION ── -->
+      <div id="workSection" style="display:contents">
+        <div class="section-sep full">
+          <span class="section-sep-label" data-t="sep_work_dates">Work Dates</span>
+          <div class="section-sep-line"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-t="lbl_work_start">Work Start Date</label>
+          <input id="work_start_date" class="form-control" placeholder="MM/DD/YYYY">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-t="lbl_work_end">Work End Date</label>
+          <input id="work_end_date" class="form-control" placeholder="MM/DD/YYYY">
+        </div>
+
+        <div class="section-sep full">
+          <span class="section-sep-label" data-t="sep_work_type">Work Type (6, 7 or 8)</span>
+          <div class="section-sep-line"></div>
+        </div>
+        <div class="reason-group">
+          <button class="reason-pill active-work" id="wt_ALL"         onclick="setWorkType('ALL')"         data-t="wt_all">6 · ALL work completed</button>
+          <button class="reason-pill"             id="wt_PARTIAL"     onclick="setWorkType('PARTIAL')"     data-t="wt_partial">7 · PARTIAL work</button>
+          <button class="reason-pill"             id="wt_INTERRUPTED" onclick="setWorkType('INTERRUPTED')" data-t="wt_interrupted">8 · INTERRUPTED by owner</button>
+        </div>
+
+        <!-- PARTIAL block -->
+        <div class="conditional-block" id="wBlock_PARTIAL">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label class="form-label" data-t="lbl_partial_reason">Reason for partial work</label>
+              <input id="partial_reason" class="form-control" placeholder="Describe the reason…">
+            </div>
             <div class="form-group">
-              <label data-t="lbl_service_charge">Service Charge ($)</label>
-              <input id="service_charge" placeholder="0.00">
+              <label class="form-label" data-t="lbl_partial_amount">Partial Amount ($)</label>
+              <input id="partial_amount" class="form-control" placeholder="0.00">
             </div>
-            <div class="section-divider" data-t="sec_nowork_reason">Reason for No Work (answer 4, 5, 6 or 7)</div>
-            <div class="reason-pills">
-              <button class="pill" id="nr_4" onclick="setNoWorkReason('4')" data-t="nr_4">4 · Inaccessible</button>
-              <button class="pill" id="nr_5" onclick="setNoWorkReason('5')" data-t="nr_5">5 · Done by others</button>
-              <button class="pill" id="nr_6" onclick="setNoWorkReason('6')" data-t="nr_6">6 · Being done by others</button>
-              <button class="pill" id="nr_7" onclick="setNoWorkReason('7')" data-t="nr_7">7 · Access denied</button>
-            </div>
+          </div>
+        </div>
 
-            <div id="nwFields_4" class="full" style="display:none">
-              <div class="form-grid">
-                <div class="form-group full"><label data-t="lbl_inacc_reason">Inaccessibility reason</label><input id="inacc_reason" placeholder="e.g. Door locked, no response"></div>
-                <div class="form-group"><label data-t="lbl_attempt1">Access attempt 1</label><input id="attempt_date1" placeholder="MM/DD/YYYY"></div>
-                <div class="form-group"><label data-t="lbl_attempt2">Access attempt 2</label><input id="attempt_date2" placeholder="MM/DD/YYYY"></div>
-                <div class="form-group"><label data-t="lbl_phone1">Phone attempt 1</label><input id="phone_date1" placeholder="MM/DD/YYYY"></div>
-                <div class="form-group"><label data-t="lbl_phone2">Phone attempt 2</label><input id="phone_date2" placeholder="MM/DD/YYYY"></div>
-              </div>
+        <!-- INTERRUPTED block -->
+        <div class="conditional-block" id="wBlock_INTERRUPTED">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" data-t="lbl_interrupted_amount">Amount for work done ($)</label>
+              <input id="interrupted_amount" class="form-control" placeholder="0.00">
             </div>
-            <div id="nwFields_5" class="full" style="display:none">
-              <div class="form-grid">
-                <div class="form-group"><label data-t="lbl_arrival">Arrival date</label><input id="arrival_date_5" placeholder="MM/DD/YYYY"></div>
-              </div>
+            <div class="section-sep full">
+              <span class="section-sep-label" data-t="sep_prevented">Person who prevented work</span>
+              <div class="section-sep-line"></div>
             </div>
-            <div id="nwFields_6" class="full" style="display:none">
-              <div class="form-grid">
-                <div class="form-group"><label data-t="lbl_arrival">Arrival date</label><input id="arrival_date_6" placeholder="MM/DD/YYYY"></div>
-                <div class="form-group"><label data-t="lbl_contractor_name">Contractor name</label><input id="contractor_name" placeholder="Full name"></div>
-              </div>
+            <div class="form-group">
+              <label class="form-label" data-t="lbl_prev_name">Name</label>
+              <input id="prevented_name" class="form-control" placeholder="Full name">
             </div>
-            <div id="nwFields_7" class="full" style="display:none">
-              <div class="form-grid">
-                <div class="form-group"><label data-t="lbl_arrival">Arrival date</label><input id="arrival_date_7" placeholder="MM/DD/YYYY"></div>
-                <div class="form-group"><label data-t="lbl_ind_name">Individual name</label><input id="individual_name" placeholder="Full name"></div>
-                <div class="form-group"><label data-t="lbl_ind_rel">Relationship</label><input id="individual_rel" placeholder="e.g. Tenant"></div>
-                <div class="form-group"><label data-t="lbl_ind_desc">Description</label><input id="individual_desc" placeholder="e.g. Female, medium height"></div>
-                <div class="form-group"><label data-t="lbl_ind_phone">Phone</label><input id="individual_phone" placeholder="000-000-0000"></div>
-              </div>
+            <div class="form-group">
+              <label class="form-label" data-t="lbl_prev_rel">Relationship</label>
+              <input id="prevented_rel" class="form-control" placeholder="e.g. Owner, Tenant">
+            </div>
+            <div class="form-group full">
+              <label class="form-label" data-t="lbl_prev_desc">Physical description</label>
+              <input id="prevented_desc" class="form-control" placeholder="e.g. Male, tall, gray hair">
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- TAB 2: INVOICE -->
-    <div class="tab-content" id="tab2">
-      <div class="form-grid">
-        <div class="form-group"><label data-t="lbl_invoice_num">Invoice #</label><input id="invoice_number" placeholder="e.g. 2029"></div>
-        <div class="form-group"><label data-t="lbl_invoice_date">Invoice Date</label><input id="invoice_date" placeholder="MM/DD/YY"></div>
-        <div class="form-group"><label data-t="lbl_rc">RC / Mini RC #</label><input id="rc_number" placeholder="Optional"></div>
-        <div class="form-group"><label data-t="lbl_work_start_inv">Work Start</label><input id="work_start_date_inv" placeholder="MM/DD/YY" data-mirror="work_start_date"></div>
+      <!-- ── NO WORK SECTION ── -->
+      <div id="noworkSection" style="display:none;contents:none">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" data-t="lbl_service_charge">Service Charge ($)</label>
+            <input id="service_charge" class="form-control" placeholder="0.00">
+          </div>
 
-        <div class="section-divider" data-t="sec_description">Description of Work Done (6 rows)</div>
-        <div class="form-group full"><input id="inv_desc1" placeholder="Row 1 — Main description…"></div>
-        <div class="form-group full"><input id="inv_desc2" placeholder="Row 2"></div>
-        <div class="form-group full"><input id="inv_desc3" placeholder="Row 3"></div>
-        <div class="form-group full"><input id="inv_desc4" placeholder="Row 4"></div>
-        <div class="form-group full"><input id="inv_desc5" placeholder="Row 5"></div>
-        <div class="form-group full"><input id="inv_desc6" placeholder="Row 6"></div>
+          <div class="section-sep full">
+            <span class="section-sep-label" data-t="sep_nowork_reason">Reason (4, 5, 6 or 7)</span>
+            <div class="section-sep-line"></div>
+          </div>
+          <div class="reason-group">
+            <button class="reason-pill" id="nr_4" onclick="setNoWorkReason('4')" data-t="nr_4">4 · Physically inaccessible</button>
+            <button class="reason-pill" id="nr_5" onclick="setNoWorkReason('5')" data-t="nr_5">5 · Work done by others</button>
+            <button class="reason-pill" id="nr_6" onclick="setNoWorkReason('6')" data-t="nr_6">6 · Work being done by others</button>
+            <button class="reason-pill" id="nr_7" onclick="setNoWorkReason('7')" data-t="nr_7">7 · Access denied</button>
+          </div>
 
-        <div class="section-divider" data-t="sec_materials">Materials &amp; Quantities</div>
-        <div class="full">
-          <table class="mat-table">
-            <thead><tr><th data-t="mat_desc">Material Description</th><th class="qty-col" data-t="mat_qty">Qty</th></tr></thead>
-            <tbody id="matBody">
-              <tr><td><input id="inv_mat1" placeholder="e.g. INSTALL HINGES - TOTAL DOORS= (1)"></td><td><input id="inv_qty1" placeholder="1"></td></tr>
-              <tr><td><input id="inv_mat2" placeholder=""></td><td><input id="inv_qty2" placeholder=""></td></tr>
-              <tr><td><input id="inv_mat3" placeholder=""></td><td><input id="inv_qty3" placeholder=""></td></tr>
-              <tr><td><input id="inv_mat4" placeholder=""></td><td><input id="inv_qty4" placeholder=""></td></tr>
-              <tr><td><input id="inv_mat5" placeholder=""></td><td><input id="inv_qty5" placeholder=""></td></tr>
-              <tr><td><input id="inv_mat6" placeholder=""></td><td><input id="inv_qty6" placeholder=""></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section-divider" data-t="sec_amounts">Amounts</div>
-        <div class="form-group"><label data-t="lbl_bid">Bid Amount ($)</label><input id="bid_amount" placeholder="0.00"></div>
-        <div class="form-group"><label data-t="lbl_total">Total Charge ($)</label><input id="total_charge" placeholder="0.00"></div>
-
-        <div class="info-box" id="noworkInvoiceNote" style="display:none">
-          <strong data-t="note_title">Note:</strong>
-          <span data-t="nowork_invoice_note">For No Work services, the invoice is auto-filled with "NO WORK DONE" as material and the Service Charge as the amount. You don't need to fill the materials table.</span>
+          <div class="conditional-block" id="nwBlock_4">
+            <div class="form-grid">
+              <div class="form-group full">
+                <label class="form-label" data-t="lbl_inacc_reason">Describe inaccessibility</label>
+                <input id="inacc_reason" class="form-control" placeholder="e.g. Door locked, no response to knocking">
+              </div>
+              <div class="form-group"><label class="form-label" data-t="lbl_attempt1">Access attempt 1 (≥72h apart)</label><input id="attempt_date1" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_attempt2">Access attempt 2</label><input id="attempt_date2" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_phone1">Phone attempt 1</label><input id="phone_date1" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_phone2">Phone attempt 2</label><input id="phone_date2" class="form-control" placeholder="MM/DD/YYYY"></div>
+            </div>
+          </div>
+          <div class="conditional-block" id="nwBlock_5">
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_5" class="form-control" placeholder="MM/DD/YYYY"></div>
+            </div>
+          </div>
+          <div class="conditional-block" id="nwBlock_6">
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_6" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_contractor">Contractor working there</label><input id="contractor_name" class="form-control" placeholder="Full name"></div>
+            </div>
+          </div>
+          <div class="conditional-block" id="nwBlock_7">
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_7" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_ind_name">Individual name</label><input id="individual_name" class="form-control" placeholder="Full name"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_ind_rel">Relationship to building</label><input id="individual_rel" class="form-control" placeholder="e.g. Tenant, Owner"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_ind_desc">Physical description</label><input id="individual_desc" class="form-control" placeholder="e.g. Female, medium, dark hair"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_ind_phone">Telephone number</label><input id="individual_phone" class="form-control" placeholder="000-000-0000"></div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- TAB 3: NOTARY -->
-    <div class="tab-content" id="tab3">
-      <div class="form-grid cols3">
-        <div class="form-group"><label data-t="lbl_sworn_day">Day</label><input id="sworn_day" placeholder="e.g. 20"></div>
-        <div class="form-group">
-          <label data-t="lbl_sworn_month">Month</label>
-          <select id="sworn_month">
-            <option value="">— Month —</option>
-            <option>January</option><option>February</option><option>March</option>
-            <option>April</option><option>May</option><option>June</option>
-            <option>July</option><option>August</option><option>September</option>
-            <option>October</option><option>November</option><option>December</option>
-          </select>
-        </div>
-        <div class="form-group"><label data-t="lbl_sworn_year">Year</label><input id="sworn_year" placeholder="e.g. 2026"></div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── TAB 2: INVOICE ─────────────────── -->
+  <div class="tab-content" id="tab2">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label" data-t="lbl_invoice_num">Invoice #</label><input id="invoice_number" class="form-control" placeholder="e.g. 2029"></div>
+      <div class="form-group"><label class="form-label" data-t="lbl_invoice_date">Invoice Date</label><input id="invoice_date" class="form-control" placeholder="MM/DD/YY"></div>
+      <div class="form-group"><label class="form-label" data-t="lbl_work_start_inv">Date Work Started</label><input id="work_start_date_inv" class="form-control" placeholder="MM/DD/YY"></div>
+      <div class="form-group"><label class="form-label" data-t="lbl_work_end_inv">Date Work Completed</label><input id="work_end_date_inv" class="form-control" placeholder="MM/DD/YY"></div>
+      <div class="form-group full"><label class="form-label" data-t="lbl_rc">RC / Mini RC # (optional)</label><input id="rc_number" class="form-control" placeholder="Leave blank if none"></div>
+
+      <div class="section-sep full">
+        <span class="section-sep-label" data-t="sep_description">Description of Work</span>
+        <div class="section-sep-line"></div>
       </div>
-      <div class="info-box" style="margin-top:16px">
-        <strong data-t="notary_title">Notary Public: Rajinder Singh</strong><br>
-        <span data-t="notary_note">The notary's printed name is pre-filled in the PDF. Manual signature and stamp must be added on the printed document. The sworn date above is filled in fields "Sworn to me this ___ day of _____, 20__".</span>
+      <div class="form-group full"><input id="inv_desc1" class="form-control" placeholder="Row 1 — Main description of work…"></div>
+      <div class="form-group full"><input id="inv_desc2" class="form-control" placeholder="Row 2"></div>
+      <div class="form-group full"><input id="inv_desc3" class="form-control" placeholder="Row 3"></div>
+      <div class="form-group full"><input id="inv_desc4" class="form-control" placeholder="Row 4"></div>
+      <div class="form-group full"><input id="inv_desc5" class="form-control" placeholder="Row 5"></div>
+      <div class="form-group full"><input id="inv_desc6" class="form-control" placeholder="Row 6"></div>
+
+      <div class="section-sep full">
+        <span class="section-sep-label" data-t="sep_materials">Materials &amp; Quantities</span>
+        <div class="section-sep-line"></div>
+      </div>
+      <div class="mat-table-wrap">
+        <table class="mat-table">
+          <thead><tr>
+            <th data-t="mat_th_desc">Material Description</th>
+            <th class="qty-col" data-t="mat_th_qty">Qty</th>
+          </tr></thead>
+          <tbody>
+            <tr><td><input id="inv_mat1" class="form-control" placeholder="e.g. INSTALL HINGES – TOTAL DOORS= (1)"></td><td class="qty-col"><input id="inv_qty1" class="form-control" placeholder="1"></td></tr>
+            <tr><td><input id="inv_mat2" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty2" class="form-control" placeholder=""></td></tr>
+            <tr><td><input id="inv_mat3" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty3" class="form-control" placeholder=""></td></tr>
+            <tr><td><input id="inv_mat4" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty4" class="form-control" placeholder=""></td></tr>
+            <tr><td><input id="inv_mat5" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty5" class="form-control" placeholder=""></td></tr>
+            <tr><td><input id="inv_mat6" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty6" class="form-control" placeholder=""></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- No-work callout -->
+      <div class="callout" id="calloutNoWork" style="display:none">
+        <span class="callout-icon">ℹ️</span>
+        <span data-t="callout_nowork">For No Work services: "NO WORK DONE" is auto-set as material and the Service Charge is used as the invoice amount.</span>
+      </div>
+
+      <div class="section-sep full">
+        <span class="section-sep-label" data-t="sep_amounts">Amounts</span>
+        <div class="section-sep-line"></div>
+      </div>
+      <div class="form-group"><label class="form-label" data-t="lbl_bid">Bid Amount ($)</label><input id="bid_amount" class="form-control" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label" data-t="lbl_total">Total Charge ($)</label><input id="total_charge" class="form-control" placeholder="0.00"></div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── TAB 3: NOTARY ─────────────────── -->
+  <div class="tab-content" id="tab3">
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_day">Day</label>
+        <input id="sworn_day" class="form-control" placeholder="e.g. 20">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_month">Month</label>
+        <select id="sworn_month" class="form-control">
+          <option value="">— Month —</option>
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-t="lbl_year">Year</label>
+        <input id="sworn_year" class="form-control" placeholder="e.g. 2026">
+      </div>
+    </div>
+    <div class="callout" style="margin-top:20px">
+      <span class="callout-icon">⚖️</span>
+      <div>
+        <strong data-t="step_notary">Notary Public: Rajinder Singh</strong><br>
+        <span data-t="callout_notary">Pre-printed in PDF. Manual signature + stamp required on the printed document.</span>
       </div>
     </div>
   </div>
 
+  <!-- Modal footer -->
   <div class="modal-footer">
-    <button class="btn-cancel" onclick="closeModal()" data-t="cancel">Cancel</button>
-    <button class="btn-save" id="btnSave" onclick="save()" data-t="save">Save Service</button>
+    <div class="footer-left" id="footerTabInfo">1 / 4</div>
+    <div class="footer-right">
+      <button class="btn btn-ghost" onclick="closeModal()" data-t="cancel">Cancel</button>
+      <button class="btn btn-primary" id="btnSave" onclick="save()" data-t="save">Save Service</button>
+    </div>
   </div>
-</div>
-</div>
 
+</div><!-- /.modal -->
+</div><!-- /.overlay -->
+
+<!-- Toast -->
 <div id="toast"></div>
 
-<script>
-// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
-const T = {
-  en:{
-    app_title:"HPD Service Manager", new_service:"New OMO",
-    all_label:"All", status_pending:"Pending", status_work:"Work Done",
-    status_nowork:"No Work", status_submitted:"Submitted", status_paid:"Paid",
-    all_types:"All Doc Types", type_work:"Work Performed", type_nowork:"No Work Performed",
-    loading:"Loading…", no_records:"No services found.",
-    th_omo:"OMO #", th_status:"Status", th_address:"Building Address",
-    th_county:"County", th_date:"Date", th_amount:"Amount", th_actions:"Actions",
-    new_service_title:"New OMO Service", edit_service_title:"Edit Service",
-    tab_job:"Job Info", tab_outcome:"Outcome", tab_invoice:"Invoice", tab_notary:"Notary",
-    lbl_omo:"OMO Number", lbl_status:"Initial Status",
-    lbl_address:"Building Address", lbl_apt:"Work Location / Apt",
-    lbl_county:"County", lbl_borough:"Borough", lbl_trade:"Trade",
-    lbl_date_directed:"Date Directed",
-    work_performed:"Work Performed", no_work_performed:"No Work Performed",
-    sec_work_type:"Work Type (answer 6, 7 or 8)",
-    wt_all:"6 · ALL Work Completed", wt_partial:"7 · PARTIAL Work", wt_interrupted:"8 · INTERRUPTED by Owner",
-    lbl_work_start:"Work Start", lbl_work_end:"Work End",
-    lbl_partial_reason:"Reason for partial", lbl_partial_amount:"Partial Amount ($)",
-    lbl_interrupted_amount:"Amount ($)", sec_prevented:"Person who prevented work (Page 2)",
-    lbl_prev_name:"Name", lbl_prev_rel:"Relationship", lbl_prev_desc:"Description",
-    lbl_service_charge:"Service Charge ($)", sec_nowork_reason:"Reason (4, 5, 6 or 7)",
-    nr_4:"4 · Inaccessible", nr_5:"5 · Done by others",
-    nr_6:"6 · Being done by others", nr_7:"7 · Access denied",
-    lbl_inacc_reason:"Inaccessibility reason",
-    lbl_attempt1:"Access attempt 1", lbl_attempt2:"Access attempt 2",
-    lbl_phone1:"Phone attempt 1", lbl_phone2:"Phone attempt 2",
-    lbl_arrival:"Arrival date", lbl_contractor_name:"Contractor name",
-    lbl_ind_name:"Individual name", lbl_ind_rel:"Relationship",
-    lbl_ind_desc:"Description", lbl_ind_phone:"Phone",
-    lbl_invoice_num:"Invoice #", lbl_invoice_date:"Invoice Date",
-    lbl_rc:"RC / Mini RC #", lbl_work_start_inv:"Work Start",
-    sec_description:"Description of Work (6 rows)", sec_materials:"Materials & Quantities",
-    mat_desc:"Material Description", mat_qty:"Qty",
-    sec_amounts:"Amounts", lbl_bid:"Bid Amount ($)", lbl_total:"Total Charge ($)",
-    note_title:"Note:", nowork_invoice_note:"For No Work services, 'NO WORK DONE' is auto-filled as material and the Service Charge as amount.",
-    lbl_sworn_day:"Day", lbl_sworn_month:"Month", lbl_sworn_year:"Year",
-    notary_title:"Notary: Rajinder Singh",
-    notary_note:"Manual signature and stamp required on printed document.",
-    cancel:"Cancel", save:"Save Service",
-    saved:"Service saved!", deleted:"Service deleted.",
-    err_save:"Error saving. Try again.", confirm_del:"Delete this service?",
-    status_changed:"Status updated.",
-    action_mark_work:"✅ Mark Work Done", action_mark_nowork:"🚫 Mark No Work",
-    action_submit:"📤 Submit to HPD", action_paid:"💰 Mark Paid",
-    action_dl_aff:"Affidavit", action_dl_inv:"Invoice", action_dl_zip:"ZIP",
-  },
-  es:{
-    app_title:"Gestor de Servicios HPD", new_service:"Nueva OMO",
-    all_label:"Todos", status_pending:"Pendiente", status_work:"Trabajo Hecho",
-    status_nowork:"Sin Trabajo", status_submitted:"Enviado", status_paid:"Pagado",
-    all_types:"Todos los tipos", type_work:"Trabajo Realizado", type_nowork:"Sin Trabajo",
-    loading:"Cargando…", no_records:"No se encontraron servicios.",
-    th_omo:"OMO #", th_status:"Estado", th_address:"Dirección",
-    th_county:"Condado", th_date:"Fecha", th_amount:"Monto", th_actions:"Acciones",
-    new_service_title:"Nueva Orden OMO", edit_service_title:"Editar Servicio",
-    tab_job:"Trabajo", tab_outcome:"Resultado", tab_invoice:"Factura", tab_notary:"Notario",
-    lbl_omo:"Número OMO", lbl_status:"Estado inicial",
-    lbl_address:"Dirección", lbl_apt:"Ubicación / Apt",
-    lbl_county:"Condado", lbl_borough:"Barrio", lbl_trade:"Oficio",
-    lbl_date_directed:"Fecha dirigido",
-    work_performed:"Trabajo Realizado", no_work_performed:"Sin Trabajo",
-    sec_work_type:"Tipo de trabajo (6, 7 u 8)",
-    wt_all:"6 · TODO el trabajo", wt_partial:"7 · Trabajo PARCIAL", wt_interrupted:"8 · INTERRUMPIDO",
-    lbl_work_start:"Inicio", lbl_work_end:"Fin",
-    lbl_partial_reason:"Razón del trabajo parcial", lbl_partial_amount:"Monto parcial ($)",
-    lbl_interrupted_amount:"Monto ($)", sec_prevented:"Persona que impidió el trabajo",
-    lbl_prev_name:"Nombre", lbl_prev_rel:"Relación con el edificio", lbl_prev_desc:"Descripción",
-    lbl_service_charge:"Cargo de servicio ($)", sec_nowork_reason:"Razón (4, 5, 6 o 7)",
-    nr_4:"4 · Inaccesible", nr_5:"5 · Ya hecho por otros",
-    nr_6:"6 · Siendo hecho", nr_7:"7 · Acceso denegado",
-    lbl_inacc_reason:"Razón de inaccesibilidad",
-    lbl_attempt1:"Intento de acceso 1", lbl_attempt2:"Intento de acceso 2",
-    lbl_phone1:"Intento telefónico 1", lbl_phone2:"Intento telefónico 2",
-    lbl_arrival:"Fecha de llegada", lbl_contractor_name:"Nombre del contratista",
-    lbl_ind_name:"Nombre", lbl_ind_rel:"Relación", lbl_ind_desc:"Descripción", lbl_ind_phone:"Teléfono",
-    lbl_invoice_num:"N° de factura", lbl_invoice_date:"Fecha de factura",
-    lbl_rc:"RC / Mini RC #", lbl_work_start_inv:"Inicio del trabajo",
-    sec_description:"Descripción del trabajo (6 líneas)", sec_materials:"Materiales y Cantidades",
-    mat_desc:"Descripción del material", mat_qty:"Cant.",
-    sec_amounts:"Montos", lbl_bid:"Monto ofertado ($)", lbl_total:"Cargo total ($)",
-    note_title:"Nota:", nowork_invoice_note:"Para servicios sin trabajo, 'NO WORK DONE' se pone automático como material.",
-    lbl_sworn_day:"Día", lbl_sworn_month:"Mes", lbl_sworn_year:"Año",
-    notary_title:"Notario: Rajinder Singh",
-    notary_note:"La firma y sello deben agregarse manualmente en el documento impreso.",
-    cancel:"Cancelar", save:"Guardar Servicio",
-    saved:"¡Servicio guardado!", deleted:"Servicio eliminado.",
-    err_save:"Error al guardar.", confirm_del:"¿Eliminar este servicio?",
-    status_changed:"Estado actualizado.",
-    action_mark_work:"✅ Trabajo Hecho", action_mark_nowork:"🚫 Sin Trabajo",
-    action_submit:"📤 Enviar a HPD", action_paid:"💰 Marcar Pagado",
-    action_dl_aff:"Affidavit", action_dl_inv:"Factura", action_dl_zip:"ZIP",
-  }
-};
-
-const STATUS_META = {
-  pending:          {label:"Pending",           icon:"⏳", cls:"badge-pending"},
-  work_performed:   {label:"Work Performed",    icon:"✅", cls:"badge-work_performed"},
-  no_work_performed:{label:"No Work Performed", icon:"🚫", cls:"badge-no_work_performed"},
-  submitted:        {label:"Submitted",         icon:"📤", cls:"badge-submitted"},
-  paid:             {label:"Paid",              icon:"💰", cls:"badge-paid"},
-};
-
-const COUNTY_BOROUGH = {
-  'Kings':'Brooklyn','New York':'Manhattan','Bronx':'Bronx',
-  'Queens':'Queens','Richmond':'Staten Island'
-};
-
-let lang       = localStorage.getItem('afLang') || 'en';
-let records    = [];
-let editId     = null;
-let docType    = 'work';
-let workType   = 'ALL';
-let noworkReason = '';
-let statusFilter = 'all';
-
-// ─── LANG ─────────────────────────────────────────────────────────────────────
-function setLang(l){
-  lang = l;
-  localStorage.setItem('afLang', l);
-  document.getElementById('btnEN').classList.toggle('active', l==='en');
-  document.getElementById('btnES').classList.toggle('active', l==='es');
-  document.querySelectorAll('[data-t]').forEach(el=>{
-    const k = el.dataset.t;
-    if(T[l][k] !== undefined) el.textContent = T[l][k];
-  });
-  document.getElementById('searchInput').placeholder = l==='en'
-    ? 'Search OMO#, address, county…' : 'Buscar OMO#, dirección, condado…';
-  renderAll();
-}
-
-// ─── TABS ─────────────────────────────────────────────────────────────────────
-function switchTab(i){
-  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
-  document.querySelectorAll('.tab-content').forEach((t,j)=>t.classList.toggle('active',j===i));
-}
-
-// ─── PIPELINE FILTER ──────────────────────────────────────────────────────────
-function setStatusFilter(s){
-  statusFilter = s;
-  document.querySelectorAll('.pipe-node').forEach(n=>{
-    n.classList.toggle('active-filter', n.dataset.s === s);
-  });
-  renderAll();
-}
-
-// ─── DOC TYPE ─────────────────────────────────────────────────────────────────
-function setDocType(t){
-  docType = t;
-  const isWork = t==='work';
-  document.getElementById('btnWork').className   = 'doctype-btn' + (isWork ? ' active-work':'');
-  document.getElementById('btnNoWork').className = 'doctype-btn' + (!isWork ? ' active-nowork':'');
-  document.getElementById('workFields').style.display   = isWork ? 'contents' : 'none';
-  document.getElementById('noworkFields').style.display = !isWork ? 'contents' : 'none';
-  document.getElementById('noworkInvoiceNote').style.display = !isWork ? 'block' : 'none';
-  // Sync status selector
-  const sel = document.getElementById('status');
-  if(isWork && sel.value==='no_work_performed') sel.value='work_performed';
-  if(!isWork && sel.value==='work_performed') sel.value='no_work_performed';
-}
-
-function setWorkType(t){
-  workType = t;
-  ['ALL','PARTIAL','INTERRUPTED'].forEach(k=>{
-    document.getElementById('wt_'+k).className = 'pill' + (k===t ? ' active-work':'');
-  });
-  document.getElementById('wFields_PARTIAL').style.display     = t==='PARTIAL'     ? 'contents' : 'none';
-  document.getElementById('wFields_INTERRUPTED').style.display = t==='INTERRUPTED' ? 'contents' : 'none';
-}
-
-function setNoWorkReason(r){
-  noworkReason = r;
-  ['4','5','6','7'].forEach(k=>{
-    document.getElementById('nr_'+k).className = 'pill' + (k===r ? ' active-nowork':'');
-    document.getElementById('nwFields_'+k).style.display = k===r ? 'block':'none';
-  });
-}
-
-// ─── AUTO BOROUGH ─────────────────────────────────────────────────────────────
-function autoBoroughFromCounty(){
-  const b = COUNTY_BOROUGH[document.getElementById('county').value] || '';
-  if(b){ for(let o of document.getElementById('borough').options) if(o.value===b){ document.getElementById('borough').value=b; break; } }
-}
-
-// ─── STATUS ACTIONS ───────────────────────────────────────────────────────────
-async function setStatus(id, status){
-  const res = await fetch(`/api/records/${id}/status`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-  if(res.ok){ showToast(T[lang].status_changed,'ok'); await loadRecords(); }
-  else showToast(T[lang].err_save, true);
-}
-
-// ─── MODAL ────────────────────────────────────────────────────────────────────
-const ALL_FIELDS = [
-  'omo_number','status','county','building_address','date_directed','work_location_apt',
-  'trade','work_start_date','work_end_date','partial_reason','partial_amount',
-  'interrupted_amount','prevented_name','prevented_rel','prevented_desc',
-  'service_charge','inacc_reason','attempt_date1','attempt_date2',
-  'phone_date1','phone_date2','contractor_name',
-  'individual_name','individual_rel','individual_desc','individual_phone',
-  'invoice_number','invoice_date','rc_number',
-  'inv_desc1','inv_desc2','inv_desc3','inv_desc4','inv_desc5','inv_desc6',
-  'inv_mat1','inv_mat2','inv_mat3','inv_mat4','inv_mat5','inv_mat6',
-  'inv_qty1','inv_qty2','inv_qty3','inv_qty4','inv_qty5','inv_qty6',
-  'bid_amount','total_charge','sworn_day','sworn_month','sworn_year',
-  'arrival_date_5','arrival_date_6','arrival_date_7',
-];
-
-function openModal(rec=null){
-  editId = rec ? rec.id : null;
-  document.getElementById('modalTitle').textContent = T[lang][rec ? 'edit_service_title':'new_service_title'];
-
-  ALL_FIELDS.forEach(id=>{
-    const el = document.getElementById(id);
-    if(!el) return;
-    if(id.startsWith('arrival_date_')){
-      el.value = rec ? (rec.arrival_date||'') : '';
-    } else if(id==='borough'){
-      el.value = rec ? (rec.borough||'') : '';
-    } else {
-      el.value = rec ? (rec[id]||'') : '';
-    }
-  });
-
-  // Work start mirror
-  document.getElementById('work_start_date_inv').value =
-    rec ? (rec.work_start_date||rec.date_directed||'') : '';
-
-  setDocType(rec ? (rec.doc_type||'work') : 'work');
-  setWorkType(rec ? (rec.work_type||'ALL') : 'ALL');
-
-  // Reset no-work reasons
-  noworkReason = rec ? (rec.nowork_reason||'') : '';
-  ['4','5','6','7'].forEach(k=>{
-    document.getElementById('nr_'+k).className = 'pill' + (k===noworkReason ? ' active-nowork':'');
-    document.getElementById('nwFields_'+k).style.display = k===noworkReason ? 'block':'none';
-  });
-
-  // Status
-  if(rec && rec.status) document.getElementById('status').value = rec.status;
-
-  switchTab(0);
-  document.getElementById('overlay').classList.add('open');
-}
-
-function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
-function overlayClick(e){ if(e.target===document.getElementById('overlay')) closeModal(); }
-
-// ─── SAVE ─────────────────────────────────────────────────────────────────────
-async function save(){
-  const btn = document.getElementById('btnSave');
-  btn.disabled = true;
-  const g = id => (document.getElementById(id)||{}).value||'';
-
-  const arrMap = {'4':'arrival_date_5','5':'arrival_date_5','6':'arrival_date_6','7':'arrival_date_7'};
-  const arrField = arrMap[noworkReason];
-  const arrivalVal = arrField ? g(arrField) : '';
-
-  // Sync work_start from invoice tab if filled
-  const wsInv = g('work_start_date_inv');
-  const wsFinal = g('work_start_date') || wsInv;
-
-  const data = {
-    doc_type: docType, status: g('status')||'pending',
-    omo_number:g('omo_number'), county:g('county'), building_address:g('building_address'),
-    date_directed:g('date_directed'), work_location_apt:g('work_location_apt'),
-    trade:g('trade'), borough:g('borough'),
-    work_start_date:wsFinal, work_end_date:g('work_end_date'),
-    work_type: docType==='work' ? workType : '',
-    partial_reason: docType==='work'&&workType==='PARTIAL' ? g('partial_reason') : '',
-    partial_amount: docType==='work'&&workType==='PARTIAL' ? g('partial_amount') : '',
-    interrupted_amount: docType==='work'&&workType==='INTERRUPTED' ? g('interrupted_amount') : '',
-    prevented_name: docType==='work'&&workType==='INTERRUPTED' ? g('prevented_name') : '',
-    prevented_rel:  docType==='work'&&workType==='INTERRUPTED' ? g('prevented_rel')  : '',
-    prevented_desc: docType==='work'&&workType==='INTERRUPTED' ? g('prevented_desc') : '',
-    service_charge: docType==='nowork' ? g('service_charge') : '',
-    nowork_reason:  docType==='nowork' ? noworkReason : '',
-    inacc_reason:   noworkReason==='4' ? g('inacc_reason')   : '',
-    attempt_date1:  noworkReason==='4' ? g('attempt_date1')  : '',
-    attempt_date2:  noworkReason==='4' ? g('attempt_date2')  : '',
-    phone_date1:    noworkReason==='4' ? g('phone_date1')    : '',
-    phone_date2:    noworkReason==='4' ? g('phone_date2')    : '',
-    arrival_date:   arrivalVal,
-    contractor_name:noworkReason==='6' ? g('contractor_name') : '',
-    individual_name:noworkReason==='7' ? g('individual_name') : '',
-    individual_rel: noworkReason==='7' ? g('individual_rel')  : '',
-    individual_desc:noworkReason==='7' ? g('individual_desc') : '',
-    individual_phone:noworkReason==='7'? g('individual_phone'): '',
-    invoice_number:g('invoice_number'), invoice_date:g('invoice_date'),
-    rc_number:g('rc_number'),
-    inv_desc1:g('inv_desc1'),inv_desc2:g('inv_desc2'),inv_desc3:g('inv_desc3'),
-    inv_desc4:g('inv_desc4'),inv_desc5:g('inv_desc5'),inv_desc6:g('inv_desc6'),
-    inv_mat1:g('inv_mat1'),inv_mat2:g('inv_mat2'),inv_mat3:g('inv_mat3'),
-    inv_mat4:g('inv_mat4'),inv_mat5:g('inv_mat5'),inv_mat6:g('inv_mat6'),
-    inv_qty1:g('inv_qty1'),inv_qty2:g('inv_qty2'),inv_qty3:g('inv_qty3'),
-    inv_qty4:g('inv_qty4'),inv_qty5:g('inv_qty5'),inv_qty6:g('inv_qty6'),
-    bid_amount:g('bid_amount'), total_charge:g('total_charge'),
-    sworn_day:g('sworn_day'), sworn_month:g('sworn_month'), sworn_year:g('sworn_year'),
-  };
-
-  try{
-    const url = editId ? `/api/records/${editId}` : '/api/records';
-    const res = await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-    if(!res.ok) throw new Error();
-    showToast(T[lang].saved,'ok');
-    closeModal();
-    await loadRecords();
-  } catch{ showToast(T[lang].err_save,true); }
-  finally{ btn.disabled=false; }
-}
-
-// ─── DELETE ───────────────────────────────────────────────────────────────────
-async function deleteRecord(id){
-  if(!confirm(T[lang].confirm_del)) return;
-  await fetch(`/api/records/${id}`,{method:'DELETE'});
-  showToast(T[lang].deleted,'ok');
-  await loadRecords();
-}
-
-function dlPdf(id,doc){ window.open(`/api/records/${id}/pdf/${doc}`,'_blank'); }
-
-// ─── RENDER ───────────────────────────────────────────────────────────────────
-async function loadRecords(){
-  const res = await fetch('/api/records');
-  records = await res.json();
-  renderAll();
-}
-
-const STATUSES = ['pending','work_performed','no_work_performed','submitted','paid'];
-const STATUS_LABEL_KEY = {
-  pending:'status_pending',work_performed:'status_work',
-  no_work_performed:'status_nowork',submitted:'status_submitted',paid:'status_paid'
-};
-
-function renderAll(){
-  const q    = document.getElementById('searchInput').value.trim().toLowerCase();
-  const type = document.getElementById('filterType').value;
-
-  // Pipeline counts
-  document.getElementById('pc_all').textContent = records.length;
-  STATUSES.forEach(s=>{ document.getElementById('pc_'+s).textContent = records.filter(r=>r.status===s).length; });
-
-  let rows = records;
-  if(statusFilter && statusFilter!=='all') rows = rows.filter(r=>r.status===statusFilter);
-  if(type) rows = rows.filter(r=>r.doc_type===type);
-  if(q) rows = rows.filter(r=>Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
-
-  const tbody = document.getElementById('tableBody');
-  if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="7" class="empty"><div class="empty-icon">🔍</div><div>${T[lang].no_records}</div></td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = rows.map(r=>{
-    const sm   = STATUS_META[r.status] || STATUS_META.pending;
-    const badge= `<span class="badge ${sm.cls}">${sm.icon} ${T[lang][STATUS_LABEL_KEY[r.status]]||r.status}</span>`;
-    const date = r.date_directed||r.work_start_date||r.invoice_date||'—';
-    const addr = r.building_address ? r.building_address.substring(0,32)+(r.building_address.length>32?'…':'') : '—';
-    const amt  = r.total_charge ? `$${r.total_charge}` : (r.service_charge?`$${r.service_charge}`:'—');
-
-    // Context-sensitive actions
-    const actions = [];
-    if(r.status==='pending'){
-      actions.push(`<button class="btn-icon btn-work" onclick="setStatus(${r.id},'work_performed')" title="${T[lang].action_mark_work}">✅</button>`);
-      actions.push(`<button class="btn-icon btn-nowork" onclick="setStatus(${r.id},'no_work_performed')" title="${T[lang].action_mark_nowork}">🚫</button>`);
-    }
-    if(r.status==='work_performed'||r.status==='no_work_performed'){
-      actions.push(`<button class="btn-icon btn-dl" onclick="dlPdf(${r.id},'affidavit')" title="${T[lang].action_dl_aff}">📋</button>`);
-      actions.push(`<button class="btn-icon btn-dl" onclick="dlPdf(${r.id},'invoice')" title="${T[lang].action_dl_inv}">🧾</button>`);
-      actions.push(`<button class="btn-icon btn-zip" onclick="dlPdf(${r.id},'zip')" title="${T[lang].action_dl_zip}">📦</button>`);
-      actions.push(`<button class="btn-icon btn-submit" onclick="setStatus(${r.id},'submitted')" title="${T[lang].action_submit}">📤</button>`);
-    }
-    if(r.status==='submitted'){
-      actions.push(`<button class="btn-icon btn-dl" onclick="dlPdf(${r.id},'affidavit')" title="${T[lang].action_dl_aff}">📋</button>`);
-      actions.push(`<button class="btn-icon btn-dl" onclick="dlPdf(${r.id},'invoice')" title="${T[lang].action_dl_inv}">🧾</button>`);
-      actions.push(`<button class="btn-icon btn-paid" onclick="setStatus(${r.id},'paid')" title="${T[lang].action_paid}">💰</button>`);
-    }
-    if(r.status==='paid'){
-      actions.push(`<button class="btn-icon btn-zip" onclick="dlPdf(${r.id},'zip')" title="${T[lang].action_dl_zip}">📦</button>`);
-    }
-    actions.push(`<button class="btn-icon btn-edit" onclick='openModal(${JSON.stringify(r)})' title="Edit">✏️</button>`);
-    actions.push(`<button class="btn-icon btn-del" onclick="deleteRecord(${r.id})" title="Delete">🗑️</button>`);
-
-    return `<tr>
-      <td><span class="omo-cell">${r.omo_number||'—'}</span></td>
-      <td>${badge}</td>
-      <td title="${r.building_address||''}">${addr}</td>
-      <td>${r.county||'—'}</td>
-      <td>${date}</td>
-      <td><strong>${amt}</strong></td>
-      <td><div class="actions">${actions.join('')}</div></td>
-    </tr>`;
-  }).join('');
-}
-
-// ─── TOAST ────────────────────────────────────────────────────────────────────
-function showToast(msg, type=''){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show' + (type==='err'?' err':type==='ok'?' ok':'');
-  setTimeout(()=>t.className='', 3000);
-}
-
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-setStatusFilter('all');
-setLang(lang);
-loadRecords();
-</script>
+<script src="/static/app.js"></script>
 </body>
 </html>
