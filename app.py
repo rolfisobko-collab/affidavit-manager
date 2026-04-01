@@ -766,103 +766,140 @@ def _clean(s):
 def parse_hpd_omo_pdf(file_bytes):
     """
     Extrae campos del PDF de HPD (OPM-201) usando PyMuPDF + regex.
-    Devuelve un dict con los campos mapeados al schema de la app.
+    En este formato el valor suele estar en la línea ANTERIOR a la etiqueta.
     """
     import fitz
     doc  = fitz.open(stream=file_bytes, filetype="pdf")
     text = "\n".join(page.get_text() for page in doc)
     doc.close()
 
+    lines = [l.strip() for l in text.split("\n")]
     result = {}
 
-    # OMO Number  →  "OMO No. EQ20453"  o  "OMO No: EQ20453"
-    m = re.search(r'OMO\s+No[.:]?\s*([A-Z0-9]+)', text, re.I)
-    if m:
-        result["omo_number"] = m.group(1).strip()
+    def prev_val(label_re, offset=1):
+        """Devuelve el valor N líneas antes de una etiqueta."""
+        for i, l in enumerate(lines):
+            if re.match(label_re, l, re.I) and i >= offset:
+                v = lines[i - offset].strip()
+                if v:
+                    return v
+        return None
 
-    # Building address
-    m = re.search(r'(?:Bldg\s+Address|BUILDING\s+ADDRESS)[:\s]+([0-9A-Z ,]+?)(?:\n|Apt|Borough|Boro)', text, re.I)
-    if m:
-        result["building_address"] = _clean(m.group(1))
+    def next_val(label_re):
+        """Devuelve el valor en la línea inmediatamente siguiente a una etiqueta."""
+        for i, l in enumerate(lines):
+            if re.match(label_re, l, re.I) and i + 1 < len(lines):
+                v = lines[i + 1].strip()
+                if v:
+                    return v
+        return None
 
-    # Apt / Location
-    m = re.search(r'Apt[.:]?\s*([^\n]{1,30})', text, re.I)
-    if m:
-        apt = _clean(m.group(1))
-        if apt and apt.lower() not in ("key with", "tel. no", ""):
-            result["work_location_apt"] = apt
+    def inline_val(label_re):
+        """Devuelve el valor inline después de los dos puntos en la misma línea."""
+        for l in lines:
+            m = re.match(label_re + r'[:\s]+(.+)', l, re.I)
+            if m:
+                return m.group(1).strip()
+        return None
 
-    # Borough
-    m = re.search(r'(?:Boro(?:ugh)?)[:\s]+([A-Za-z ]+?)(?:\n|$)', text, re.I)
-    if m:
-        boro = _clean(m.group(1)).strip().rstrip(",")
-        result["borough"] = boro.title()
-        # Derivar county desde borough
+    # ── OMO Number ──
+    # Formato: EQ20453 está 2 líneas antes de "OMO #:"
+    #   56: 'EQ20453'
+    #   57: 'OMO #:'
+    v = prev_val(r'OMO\s*#\s*:?$', offset=1)
+    if v and not re.match(r'^[A-Z]{1,3}\d{4,6}$', v):
+        v = None
+    if not v:
+        m = re.search(r'OMO\s*[#Nn][o.]?\s*:?\s*([A-Z]{1,3}\d{4,6})', text, re.I)
+        v = m.group(1).upper() if m else None
+    if not v:
+        m = re.search(r'\b(EQ\d{4,6}|EM\d{4,6}|HP\d{4,6})\b', text)
+        v = m.group(1).upper() if m else None
+    if v and re.match(r'^[A-Z]{1,3}\d{4,6}$', v):
+        result["omo_number"] = v
+
+    # ── Building address + Borough ──
+    # Estructura en el PDF:
+    #   58: '227 WEST 15 STREET Apt. 1'   ← dirección (2 antes de "Building Address:")
+    #   59: 'Manhattan'                    ← borough (1 antes de "Building Address:")
+    #   60: 'Building Address:'
+    addr_v  = prev_val(r'Building\s+Address\s*:?$', offset=2)
+    boro_v  = prev_val(r'Building\s+Address\s*:?$', offset=1)
+
+    if not addr_v:
+        addr_v = inline_val(r'Bldg\s+Address')
+    if addr_v:
+        apt_m = re.match(r'(.+?)\s+Apt[.:]?\s*(.+)', addr_v, re.I)
+        if apt_m:
+            result["building_address"] = _clean(apt_m.group(1))
+            result["work_location_apt"] = _clean(apt_m.group(2))
+        else:
+            result["building_address"] = _clean(addr_v)
+
+    if boro_v and re.match(r'^[A-Za-z ]+$', boro_v) and len(boro_v) < 30:
+        boro = _clean(boro_v).rstrip(",").title()
+        result["borough"] = boro
         key = boro.lower().strip()
         if key in BOROUGH_TO_COUNTY:
             result["county"] = BOROUGH_TO_COUNTY[key]
 
-    # Manhattan shorthand in text  (Man. checkbox)
+    if not boro_v:
+        v = inline_val(r'Boro(?:ugh)?')
+        if v:
+            boro = _clean(v).rstrip(",").title()
+            result["borough"] = boro
+            if boro.lower() in BOROUGH_TO_COUNTY:
+                result["county"] = BOROUGH_TO_COUNTY[boro.lower()]
+
+    # Manhattan / borough shorthands como fallback
     if "borough" not in result:
-        if re.search(r'\bMan\.\b', text):
-            result["borough"] = "Manhattan"
-            result["county"]  = "New York"
-        elif re.search(r'\bBx\.\b', text):
-            result["borough"] = "Bronx"
-            result["county"]  = "Bronx"
-        elif re.search(r'\bBklyn\b', text, re.I):
-            result["borough"] = "Brooklyn"
-            result["county"]  = "Kings"
-        elif re.search(r'\bQns\.\b', text):
-            result["borough"] = "Queens"
-            result["county"]  = "Queens"
-        elif re.search(r'\bS\.I\.\b', text):
-            result["borough"] = "Staten Island"
-            result["county"]  = "Richmond"
+        if re.search(r'\bManhattan\b', text, re.I):
+            result["borough"] = "Manhattan"; result["county"] = "New York"
+        elif re.search(r'\bBronx\b', text, re.I):
+            result["borough"] = "Bronx";     result["county"] = "Bronx"
+        elif re.search(r'\bBrooklyn\b', text, re.I):
+            result["borough"] = "Brooklyn";  result["county"] = "Kings"
+        elif re.search(r'\bQueens\b', text, re.I):
+            result["borough"] = "Queens";    result["county"] = "Queens"
+        elif re.search(r'\bStaten Island\b', text, re.I):
+            result["borough"] = "Staten Island"; result["county"] = "Richmond"
 
-    # Trade  →  "GC", "PLUMBING", "ELECTRICAL", "HINGE", etc.
-    #  Línea que dice "GC: X" o busca el campo TRADE
-    m = re.search(r'TRADE[:\s]+([A-Z /]+?)(?:\n|$)', text, re.I)
-    if m:
-        result["trade"] = _clean(m.group(1))
-    else:
-        # Intenta leer "GC" del checkbox row
-        m = re.search(r'^GC\s+([A-Z][A-Z ]+)', text, re.M)
-        if m:
-            result["trade"] = _clean(m.group(0).replace("GC", "GC -"))
+    # ── Work Start Date  →  inline "Work Start Date: 2/19/26" ──
+    v = inline_val(r'Work\s+Start\s+Date')
+    if v:
+        result["date_directed"] = v
 
-    # Fechas HPD  →  "Start Date Established By HPD"  /  "Completion Date Established By HPD"
-    m = re.search(r'Start Date Established By HPD\s+\n([0-9/]+)', text, re.I)
-    if not m:
-        # fallback: busca la primera fecha en formato m/d/yy o mm/dd/yy
-        m = re.search(r'(\d{1,2}/\d{1,2}/\d{2,4})', text)
-    if m:
-        result["date_directed"] = m.group(1)
+    # ── Work Completion Date  →  línea anterior a "Work Completion Date:" ──
+    v = prev_val(r'Work\s+Completion\s+Date\s*:?$')
+    if not v:
+        v = inline_val(r'Work\s+Completion\s+Date')
+    if v and re.match(r'\d{1,2}/\d{1,2}/\d{2,4}', v):
+        result["work_end_date"] = v
 
-    m = re.search(r'(?:Work\s+Completion\s+Date|Completion Date Established)[:\s]+([0-9/]+)', text, re.I)
-    if m:
-        result["work_end_date"] = m.group(1)
+    # ── RC Number ──
+    v = inline_val(r'RC\s*No\.?')
+    if v:
+        result["rc_number"] = v.strip()
 
-    # RC Number
-    m = re.search(r'RC\s+No\.?[:\s]+([A-Z0-9\-]+)', text, re.I)
-    if m:
-        result["rc_number"] = m.group(1).strip()
+    # ── Trade ──
+    v = inline_val(r'Trade')
+    if v:
+        result["trade"] = _clean(v)
 
-    # Job description  →  página 3, después de "Job Description:"
-    m = re.search(r'Job\s+Description[:\s]*\n(.*?)(?:\nNYC HPD|\nCONTRACTOR|\nTOTAL|\n\n)', text, re.I | re.S)
+    # ── Job description — página 2/3 ──
+    m = re.search(r'Job\s+Description[:\s]*\n(.*?)(?:\nNYC HPD|\nCONTRACTOR|\nTOTAL|\nBID|\n\n\n)', text, re.I | re.S)
     if m:
         desc = _clean(m.group(1))
-        # Partir en líneas de ≤ 80 chars para los 6 campos de descripción
         words = desc.split()
-        lines, current = [], []
+        lines_out, current = [], []
         for w in words:
             current.append(w)
             if len(" ".join(current)) > 75:
-                lines.append(" ".join(current[:-1]))
+                lines_out.append(" ".join(current[:-1]))
                 current = [w]
         if current:
-            lines.append(" ".join(current))
-        for i, line in enumerate(lines[:6], 1):
+            lines_out.append(" ".join(current))
+        for i, line in enumerate(lines_out[:6], 1):
             result[f"inv_desc{i}"] = line
 
     return result
