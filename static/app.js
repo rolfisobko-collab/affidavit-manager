@@ -431,6 +431,11 @@ function openModal(rec = null) {
   // Reset all fields
   FORM_FIELDS.forEach(id => set(id, ''));
 
+  // Pre-fill signer_name with logged-in user's full name for new records
+  if (!rec && currentUser?.full_name) {
+    set('signer_name', currentUser.full_name);
+  }
+
   if (rec) {
     FORM_FIELDS.forEach(id => {
       if (id === 'arrival_date_5' || id === 'arrival_date_6' || id === 'arrival_date_7') {
