@@ -405,7 +405,7 @@ const FORM_FIELDS = [
   'omo_number', 'status', 'county', 'building_address', 'date_directed',
   'work_location_apt', 'trade', 'borough',
   'work_start_date', 'work_end_date',
-  'work_contractor_name', 'signer_name',
+  'signer_name',
   'partial_reason', 'partial_amount',
   'interrupted_amount', 'prevented_name', 'prevented_rel', 'prevented_desc',
   'service_charge', 'inacc_reason',
@@ -520,7 +520,6 @@ async function save() {
     work_end_date:    val('work_end_date')   || val('work_end_date_inv'),
     // Work fields
     work_type:         docType === 'work' ? workType : '',
-    work_contractor_name: docType === 'work' ? val('work_contractor_name') : '',
     signer_name:          val('signer_name'),
     partial_reason:    docType === 'work' && workType === 'PARTIAL'      ? val('partial_reason')     : '',
     partial_amount:    docType === 'work' && workType === 'PARTIAL'      ? val('partial_amount')     : '',
