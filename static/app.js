@@ -751,12 +751,9 @@ function renderAll() {
       }
     }
 
-    // ── Print button always visible based on status ──
+    // ── Print buttons always visible when not pending ──
     const printBtns = [];
-    if (r.status === 'work_performed' || r.status === 'submitted' || r.status === 'paid') {
-      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
-      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
-    } else if (r.status === 'no_work_performed' || r.status === 'submitted' || r.status === 'paid') {
+    if (r.status && r.status !== 'pending') {
       printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
       printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
     }
