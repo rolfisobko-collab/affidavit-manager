@@ -877,19 +877,54 @@ def parse_hpd_omo_pdf(file_bytes):
         result["work_end_date"] = v
 
     # ── RC Number ──
+    # En el PDF el RC está inline: "RC No.: XXXXX" o en línea siguiente
     v = inline_val(r'RC\s*No\.?')
-    if v:
+    if v and re.match(r'[A-Z0-9\-]+', v) and len(v) < 30:
         result["rc_number"] = v.strip()
+    if not result.get("rc_number"):
+        v = next_val(r'RC\s*No\.?\s*:?\s*$')
+        if v and re.match(r'[A-Z0-9\-]+', v) and len(v) < 30:
+            result["rc_number"] = v.strip()
 
     # ── Trade ──
-    v = inline_val(r'Trade')
-    if v:
-        result["trade"] = _clean(v)
+    # Página 3: "GC:" aparece como checkbox marcado → el trade es "GC"
+    # Otros posibles: "PLUMBING", "ELECTRICAL", etc. en campo "TRADE:" inline
+    v = inline_val(r'TRADE')
+    if not v or v.startswith('BID') or v.startswith('$'):
+        v = None
+    if not v:
+        # Buscar checkboxes de tipo de trade en Work Description Form
+        trade_map = [
+            (r'\bGC\s*:', 'GC'),
+            (r'\bPLUMBING\s*:', 'Plumbing'),
+            (r'\bELECTRICAL\s*:', 'Electrical'),
+            (r'\bHINGE\s*:', 'Hinge'),
+            (r'\bPAINT\s*:', 'Painting'),
+        ]
+        for pattern, label in trade_map:
+            # Solo cuenta si la línea es exactamente ese checkbox (corta)
+            for l in lines:
+                if re.match(pattern + r'\s*$', l, re.I):
+                    v = label
+                    break
+            if v:
+                break
+    if v and len(v) < 40:
+        result["trade"] = v
 
-    # ── Job description — página 2/3 ──
-    m = re.search(r'Job\s+Description[:\s]*\n(.*?)(?:\nNYC HPD|\nCONTRACTOR|\nTOTAL|\nBID|\n\n\n)', text, re.I | re.S)
+    # ── Job description — página 3, después de "Job Description:" ──
+    # Corta antes del boilerplate de contactos HPD o instrucciones
+    m = re.search(
+        r'Job\s+Description[:\s]*\n(.*?)(?:CONTRACTOR MUST CONTACT|IF NO WORK IS PERFORMED|BUILDING ADDRESS:|TRADE:|BID AMOUNT)',
+        text, re.I | re.S
+    )
     if m:
-        desc = _clean(m.group(1))
+        raw = m.group(1)
+        # Filtrar boilerplate y líneas muy cortas
+        SKIP = re.compile(r'NYC HPD EMERGENCY|ESSENTIAL SERVICE WORK|CONTRACTOR MUST SIGN', re.I)
+        desc_lines = [l.strip() for l in raw.split('\n')
+                      if len(l.strip()) > 4 and not SKIP.search(l)]
+        desc = _clean(" ".join(desc_lines))
         words = desc.split()
         lines_out, current = [], []
         for w in words:
