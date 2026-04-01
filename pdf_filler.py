@@ -38,15 +38,15 @@ WORK_FIELDS = {
     "building_address"  : "5",
     "work_start_date"   : "6",     # "beginning on ___"
     "work_end_date"     : "7",     # "completed on ___"
+    "work_contractor_name": "3",  # contractor name — campo 3 del affidavit
+    "signer_name"       : "15",   # Type or Print Name del firmante (pág 2)
     "partial_reason"    : "8",
     "partial_amount"    : "9",
     "interrupted_amount": "10",
     "prevented_name"    : "11",    # pág 2 — quien impidió
     "prevented_rel"     : "13",    # "as: ___"
     "prevented_desc"    : "14",
-    "sworn_day"         : "19",
-    "sworn_month"       : "21",
-    "sworn_year"        : "22",    # solo 2 dígitos (el "20" ya está impreso)
+    # sworn_day/month/year: los completa la notaria a mano — NO se rellenan desde el sistema
 }
 
 NOWORK_FIELDS = {
@@ -68,9 +68,8 @@ NOWORK_FIELDS = {
     "individual_rel"    : "16",    # "building ___"
     "individual_desc"   : "17",
     "individual_phone"  : "18",
-    "sworn_day"         : "19",
-    "sworn_month"       : "21",
-    "sworn_year"        : "22",
+    "signer_name"       : "50",   # Type or Print Name del firmante (pág 2)
+    # sworn_day/month/year: los completa la notaria a mano — NO se rellenan desde el sistema
 }
 
 INVOICE_FIELDS = {

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — LB&amp;J Construction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --lbj-blue:   #00AEEF;
+      --lbj-dark:   #007DB8;
+      --lbj-navy:   #0a1628;
+      --lbj-navy2:  #0d1f3c;
+      --lbj-navy3:  #112244;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--lbj-navy);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(0,174,239,.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(0,125,184,.06) 0%, transparent 50%);
+    }
+
+    .login-wrap {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Logo */
+    .logo-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-img-wrap {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(0,174,239,.2);
+    }
+    .logo-svg {
+      width: 180px;
+      height: auto;
+    }
+    .logo-tagline {
+      font-size: .8rem;
+      color: rgba(255,255,255,.4);
+      font-weight: 500;
+      letter-spacing: .5px;
+      text-align: center;
+    }
+
+    /* Card */
+    .login-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 20px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+
+    .login-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .login-sub {
+      font-size: .82rem;
+      color: rgba(255,255,255,.4);
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: .75rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.5);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      background: rgba(255,255,255,.07);
+      border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: .95rem;
+      color: #fff;
+      font-family: inherit;
+      transition: border-color .2s, background .2s;
+      outline: none;
+    }
+    .form-control::placeholder { color: rgba(255,255,255,.25); }
+    .form-control:focus {
+      border-color: var(--lbj-blue);
+      background: rgba(0,174,239,.07);
+    }
+
+    .btn-login {
+      width: 100%;
+      margin-top: 8px;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--lbj-blue), var(--lbj-dark));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      letter-spacing: .3px;
+    }
+    .btn-login:hover   { opacity: .9; transform: translateY(-1px); }
+    .btn-login:active  { transform: translateY(0); }
+    .btn-login:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    .error-msg {
+      background: rgba(220,38,38,.15);
+      border: 1px solid rgba(220,38,38,.3);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: .82rem;
+      margin-top: 12px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    .login-footer {
+      text-align: center;
+      font-size: .72rem;
+      color: rgba(255,255,255,.2);
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <div class="logo-box">
+    <div class="logo-img-wrap">
+      <!-- LB&J Construction logo SVG inline (blue building icon + text) -->
+      <svg class="logo-svg" viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg">
+        <!-- Building icon -->
+        <g fill="#00AEEF">
+          <rect x="2"  y="28" width="8"  height="40"/>
+          <rect x="12" y="18" width="8"  height="50"/>
+          <rect x="22" y="10" width="8"  height="58"/>
+          <rect x="32" y="20" width="8"  height="48"/>
+          <rect x="42" y="32" width="8"  height="36"/>
+          <!-- Arc base -->
+          <path d="M0 70 Q24 58 50 70" stroke="#00AEEF" stroke-width="3" fill="none"/>
+        </g>
+        <!-- LB&J CONSTRUCTION text -->
+        <text x="60" y="38" font-family="Inter,Arial,sans-serif" font-weight="800" font-size="22" fill="#00AEEF" letter-spacing="1">LB&amp;J</text>
+        <text x="60" y="62" font-family="Inter,Arial,sans-serif" font-weight="700" font-size="16" fill="#00AEEF" letter-spacing="2">CONSTRUCTION</text>
+      </svg>
+    </div>
+    <div class="logo-tagline">HPD OMO Service Manager</div>
+  </div>
+
+  <div class="login-card">
+    <div class="login-title">Sign in</div>
+    <div class="login-sub">Enter your credentials to access the system</div>
+
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input id="username" class="form-control" type="text" placeholder="your username" autocomplete="username" autofocus>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input id="password" class="form-control" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn-login" id="btnLogin" onclick="doLogin()">Sign In</button>
+    <div class="error-msg" id="errorMsg">Invalid username or password. Please try again.</div>
+  </div>
+
+  <div class="login-footer">LB &amp; J Construction Inc. · 110 Jericho Turnpike Ste 206, Floral Park NY 11001</div>
+</div>
+
+<script>
+  async function doLogin() {
+    const btn = document.getElementById('btnLogin');
+    const err = document.getElementById('errorMsg');
+    err.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (res.ok) {
+        window.location.href = '/';
+      } else {
+        err.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    } catch {
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+</script>
+</body>
+</html>

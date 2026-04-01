@@ -3,160 +3,271 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HPD Service Manager — LB &amp; J Construction</title>
+  <title>LB&amp;J — HPD Service Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<!-- ═══════════════════════════════════ HEADER ══════════════════════════════ -->
-<header class="header">
-  <div class="header-logo">
-    <div class="logo-mark">🏗️</div>
-    <div class="logo-text">
-      <div class="logo-title" data-t="app_title">HPD Service Manager</div>
-      <div class="logo-sub">LB &amp; J Construction Inc.</div>
-    </div>
-  </div>
-  <div class="header-right">
-    <div class="lang-toggle">
-      <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
-      <button class="lang-btn" id="btnES" onclick="setLang('es')">ES</button>
-    </div>
-    <button class="btn-new" onclick="openModal()">
-      <span>＋</span>
-      <span data-t="new_btn">New OMO</span>
-    </button>
-  </div>
-</header>
+<!-- ══════════════════════════════════════════════════════════════════
+     LAYOUT: sidebar + main
+══════════════════════════════════════════════════════════════════ -->
+<div class="app-layout">
 
-<div class="page-body">
+  <!-- ─── SIDEBAR ─────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
 
-  <!-- ════════════════════════════ PIPELINE ══════════════════════════════════ -->
-  <div class="pipeline-wrap">
-    <div class="pipeline-flow">
-
-      <!-- ALL -->
-      <button class="pf-node pf-all active-filter" data-s="all" onclick="setStatusFilter('all')">
-        <div class="pf-icon">📋</div>
-        <div class="pf-count" id="pc_all">0</div>
-        <div class="pf-label" data-t="pipe_all">All</div>
-      </button>
-
-      <div class="pf-arrow">›</div>
-
-      <!-- PENDING -->
-      <button class="pf-node pf-pending" data-s="pending" onclick="setStatusFilter('pending')">
-        <div class="pf-icon">⏳</div>
-        <div class="pf-count" id="pc_pending">0</div>
-        <div class="pf-label" data-t="pipe_pending">Pending</div>
-      </button>
-
-      <!-- FORK -->
-      <div class="pf-fork">
-        <div class="pf-fork-line pf-fork-line-top"></div>
-        <div class="pf-fork-line pf-fork-line-bottom"></div>
-        <svg class="pf-fork-svg" viewBox="0 0 40 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 30 L16 30 L16 10 L40 10" stroke="rgba(5,150,105,.5)"  stroke-width="2" fill="none"/>
-          <path d="M0 30 L16 30 L16 50 L40 50" stroke="rgba(220,38,38,.5)"  stroke-width="2" fill="none"/>
-        </svg>
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 38 44" xmlns="http://www.w3.org/2000/svg" class="sidebar-icon-svg">
+        <g fill="#00AEEF">
+          <rect x="0"  y="18" width="5" height="26"/>
+          <rect x="7"  y="11" width="5" height="33"/>
+          <rect x="14" y="5"  width="5" height="39"/>
+          <rect x="21" y="13" width="5" height="31"/>
+          <rect x="28" y="21" width="5" height="23"/>
+          <path d="M0 46 Q15 37 33 46" stroke="#00AEEF" stroke-width="2" fill="none"/>
+        </g>
+      </svg>
+      <div class="sidebar-logo-text">
+        <div class="slogan-main">LB&amp;J</div>
+        <div class="slogan-sub">HPD Manager</div>
       </div>
-
-      <!-- WORK + NOWORK column -->
-      <div class="pf-branch-col">
-        <button class="pf-node pf-work" data-s="work_performed" onclick="setStatusFilter('work_performed')">
-          <div class="pf-icon">✅</div>
-          <div class="pf-count" id="pc_work_performed">0</div>
-          <div class="pf-label" data-t="pipe_work">Work Done</div>
-        </button>
-        <button class="pf-node pf-nowork" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')">
-          <div class="pf-icon">🚫</div>
-          <div class="pf-count" id="pc_no_work">0</div>
-          <div class="pf-label" data-t="pipe_nowork">No Work</div>
-        </button>
-      </div>
-
-      <!-- MERGE -->
-      <div class="pf-fork pf-merge">
-        <svg class="pf-fork-svg" viewBox="0 0 40 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 10 L24 10 L24 30 L40 30" stroke="rgba(5,150,105,.5)"  stroke-width="2" fill="none"/>
-          <path d="M0 50 L24 50 L24 30 L40 30" stroke="rgba(220,38,38,.5)"  stroke-width="2" fill="none"/>
-        </svg>
-      </div>
-
-      <div class="pf-arrow">›</div>
-
-      <!-- SUBMITTED -->
-      <button class="pf-node pf-submitted" data-s="submitted" onclick="setStatusFilter('submitted')">
-        <div class="pf-icon">📤</div>
-        <div class="pf-count" id="pc_submitted">0</div>
-        <div class="pf-label" data-t="pipe_submitted">Submitted</div>
-      </button>
-
-      <div class="pf-arrow">›</div>
-
-      <!-- PAID -->
-      <button class="pf-node pf-paid" data-s="paid" onclick="setStatusFilter('paid')">
-        <div class="pf-icon">💰</div>
-        <div class="pf-count" id="pc_paid">0</div>
-        <div class="pf-label" data-t="pipe_paid">Paid</div>
-      </button>
-
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════ MAIN CONTENT ════════════════════════════════ -->
-  <main class="main">
-    <div class="toolbar">
-      <div class="search-box">
-        <span class="icon">🔍</span>
-        <input id="searchInput" type="text" placeholder="Search OMO#, address, county…" oninput="renderAll()">
-      </div>
-      <select id="filterType" onchange="renderAll()">
-        <option value="" data-t="filter_all">All Types</option>
-        <option value="work" data-t="filter_work">Work Performed</option>
-        <option value="nowork" data-t="filter_nowork">No Work Performed</option>
-      </select>
     </div>
 
-    <div class="services-grid" id="servicesContainer">
-      <!-- Skeleton loading -->
-      <div class="skeleton-card">
-        <div class="skeleton sk-block" style="width:80px"></div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-          <div class="skeleton sk-block" style="width:60%;height:16px"></div>
-          <div class="skeleton sk-block" style="width:40%"></div>
+    <!-- Nav -->
+    <nav class="sidebar-nav">
+      <button class="snav-item active" id="nav-omos" onclick="switchTab('omos')">
+        <span class="snav-icon">📋</span>
+        <span class="snav-label" data-t="nav_omos">OMOs</span>
+      </button>
+      <button class="snav-item admin-only" id="nav-users" onclick="switchTab('users')">
+        <span class="snav-icon">👥</span>
+        <span class="snav-label" data-t="nav_users">Users</span>
+      </button>
+      <button class="snav-item admin-only" id="nav-batch" onclick="switchTab('batch')">
+        <span class="snav-icon">📦</span>
+        <span class="snav-label" data-t="nav_batch">Batch</span>
+      </button>
+    </nav>
+
+    <!-- User section at bottom -->
+    <div class="sidebar-user">
+      <div class="su-avatar" id="userAvatar">?</div>
+      <div class="su-info">
+        <div class="su-name" id="userName">—</div>
+        <div class="su-role" id="userRole">—</div>
+      </div>
+      <button class="su-logout" onclick="doLogout()" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ─── MAIN ─────────────────────────────────────────────────────── -->
+  <div class="main-area">
+
+    <!-- ══ PAGE: OMOs ══════════════════════════════════════════════ -->
+    <section class="page-section active" id="page-omos">
+
+      <!-- Top bar -->
+      <div class="page-topbar">
+        <div class="page-topbar-left">
+          <h1 class="page-title" data-t="page_omos_title">Open Market Orders</h1>
+          <p class="page-subtitle" data-t="page_omos_sub">Manage HPD service records</p>
         </div>
-        <div class="skeleton sk-block" style="width:90px;height:24px;border-radius:99px"></div>
-      </div>
-      <div class="skeleton-card">
-        <div class="skeleton sk-block" style="width:80px"></div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-          <div class="skeleton sk-block" style="width:50%;height:16px"></div>
-          <div class="skeleton sk-block" style="width:35%"></div>
+        <div class="page-topbar-right">
+          <div class="lang-toggle">
+            <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
+            <button class="lang-btn" id="btnES" onclick="setLang('es')">ES</button>
+          </div>
+          <button class="btn-new admin-worker-only" onclick="openModal()">
+            <span>＋</span>
+            <span data-t="new_btn">New OMO</span>
+          </button>
         </div>
-        <div class="skeleton sk-block" style="width:90px;height:24px;border-radius:99px"></div>
       </div>
-    </div>
-  </main>
-</div>
 
-<!-- ═══════════════════════════════════ MODAL ══════════════════════════════════ -->
+      <!-- Pipeline -->
+      <div class="pipeline-strip">
+
+        <!-- All pill -->
+        <button class="ps-node active-filter" data-s="all" onclick="setStatusFilter('all')">
+          <span class="ps-icon">📋</span>
+          <span class="ps-count" id="pc_all">0</span>
+          <span class="ps-label" data-t="pipe_all">All</span>
+        </button>
+
+        <span class="ps-divider">|</span>
+
+        <!-- Flow: pending → branch → submitted → paid -->
+        <div class="ps-flow">
+
+          <!-- Step 1: Pending -->
+          <button class="ps-node" data-s="pending" onclick="setStatusFilter('pending')">
+            <span class="ps-icon">⏳</span>
+            <span class="ps-count" id="pc_pending">0</span>
+            <span class="ps-label" data-t="pipe_pending">Pending</span>
+          </button>
+
+          <span class="ps-arrow">›</span>
+
+          <!-- Step 2: Branch (work OR no-work) -->
+          <div class="ps-branch">
+            <button class="ps-node" data-s="work_performed" onclick="setStatusFilter('work_performed')">
+              <span class="ps-icon">✅</span>
+              <span class="ps-count" id="pc_work_performed">0</span>
+              <span class="ps-label" data-t="pipe_work">Work Done</span>
+            </button>
+            <button class="ps-node" data-s="no_work_performed" onclick="setStatusFilter('no_work_performed')">
+              <span class="ps-icon">🚫</span>
+              <span class="ps-count" id="pc_no_work">0</span>
+              <span class="ps-label" data-t="pipe_nowork">No Work</span>
+            </button>
+          </div>
+
+          <span class="ps-arrow">›</span>
+
+          <!-- Step 3: Submitted -->
+          <button class="ps-node" data-s="submitted" onclick="setStatusFilter('submitted')">
+            <span class="ps-icon">📤</span>
+            <span class="ps-count" id="pc_submitted">0</span>
+            <span class="ps-label" data-t="pipe_submitted">Submitted</span>
+          </button>
+
+          <span class="ps-arrow">›</span>
+
+          <!-- Step 4: Paid -->
+          <button class="ps-node" data-s="paid" onclick="setStatusFilter('paid')">
+            <span class="ps-icon">💰</span>
+            <span class="ps-count" id="pc_paid">0</span>
+            <span class="ps-label" data-t="pipe_paid">Paid</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" class="search-input" type="text" placeholder="Search OMO#, address, borough…" oninput="renderAll()">
+        <select id="filterType" class="search-select" onchange="renderAll()">
+          <option value="" data-t="filter_all">All Types</option>
+          <option value="work" data-t="filter_work">Work Performed</option>
+          <option value="nowork" data-t="filter_nowork">No Work Performed</option>
+        </select>
+      </div>
+
+      <!-- Cards -->
+      <div class="cards-list" id="servicesContainer">
+        <div class="skeleton-card"><div class="skeleton sk-line" style="width:100px"></div><div class="skeleton sk-line" style="width:60%;height:12px;margin-top:8px"></div></div>
+        <div class="skeleton-card"><div class="skeleton sk-line" style="width:80px"></div><div class="skeleton sk-line" style="width:50%;height:12px;margin-top:8px"></div></div>
+      </div>
+
+    </section>
+
+    <!-- ══ PAGE: USERS (admin only) ═════════════════════════════════ -->
+    <section class="page-section admin-only" id="page-users">
+      <div class="page-topbar">
+        <div class="page-topbar-left">
+          <h1 class="page-title" data-t="page_users_title">User Management</h1>
+          <p class="page-subtitle" data-t="page_users_sub">Create and manage system accounts</p>
+        </div>
+        <div class="page-topbar-right">
+          <button class="btn-new" onclick="toggleNewUserForm()" data-t="btn_new_user">＋ New User</button>
+        </div>
+      </div>
+
+      <!-- New user form -->
+      <div id="newUserForm" class="inline-form" style="display:none">
+        <div class="inline-form-header">
+          <span data-t="form_new_account">New Account</span>
+          <button class="btn-icon-only" onclick="toggleNewUserForm()">✕</button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" data-t="lbl_username">Username</label>
+            <input id="nu_username" class="form-control" data-ph="ph_username" placeholder="e.g. javier">
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-t="lbl_fullname">Full Name</label>
+            <input id="nu_fullname" class="form-control" data-ph="ph_fullname" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-t="lbl_password">Password</label>
+            <input id="nu_password" class="form-control" type="password" data-ph="ph_password" placeholder="Password">
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-t="lbl_role">Role</label>
+            <select id="nu_role" class="form-control">
+              <option value="worker" data-t="role_worker">Worker — Mark work, upload media</option>
+              <option value="notary" data-t="role_notary">Notary — Download PDFs only</option>
+              <option value="admin" data-t="role_admin">Admin — Full access</option>
+            </select>
+          </div>
+        </div>
+        <div class="inline-form-footer">
+          <button class="btn btn-primary" onclick="createUser()" data-t="btn_create_user">Create User</button>
+          <button class="btn btn-ghost" onclick="toggleNewUserForm()" data-t="cancel">Cancel</button>
+        </div>
+      </div>
+
+      <div id="usersList" class="users-list-page"></div>
+    </section>
+
+    <!-- ══ PAGE: BATCH (admin only) ═════════════════════════════════ -->
+    <section class="page-section admin-only" id="page-batch">
+      <div class="page-topbar">
+        <div class="page-topbar-left">
+          <h1 class="page-title" data-t="page_batch_title">Batch Download</h1>
+          <p class="page-subtitle" data-t="page_batch_sub">Download all documents organized by batch as a ZIP</p>
+        </div>
+      </div>
+
+      <div class="batch-page-body">
+        <div class="batch-card">
+          <div class="batch-card-icon">📦</div>
+          <h2 class="batch-card-title" data-t="batch_select_title">Select Batch</h2>
+          <p class="batch-card-desc" data-t="batch_select_desc">Choose a batch to download all its Affidavits, Invoices, and media files as a single ZIP.</p>
+          <select id="batchSelect" class="form-control batch-select">
+            <option value="" data-t="batch_all">— All records —</option>
+          </select>
+          <button class="btn btn-primary batch-dl-btn" onclick="doBatchDownload()" id="btnBatchDl" data-t="batch_dl_btn">
+            📥 Download ZIP
+          </button>
+          <div class="callout" style="margin-top:20px;text-align:left">
+            <span class="callout-icon">ℹ️</span>
+            <span data-t="batch_callout">ZIP structure: <strong>BatchName / OMO# / Affidavit + Invoice + media/</strong></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /.main-area -->
+</div><!-- /.app-layout -->
+
+<!-- ═══════════════════════════════════ MODAL OMO ══════════════════════════════════ -->
 <div class="overlay" id="overlay" onclick="overlayClick(event)">
 <div class="modal" id="modal">
 
-  <!-- Header -->
   <div class="modal-header">
     <div class="modal-header-left">
       <div class="modal-title" id="modalTitle">New OMO Service</div>
-      <div class="modal-sub"   id="modalSub">Fill in the details for this Open Market Order</div>
+      <div class="modal-sub" id="modalSub">Fill in the details for this Open Market Order</div>
+    </div>
+    <div class="modal-header-actions" id="modalImportZone">
+      <input type="file" id="omoPdfInput" accept=".pdf" style="display:none" onchange="importOmoPdf(this)">
+      <button class="btn-import-pdf admin-worker-only" onclick="document.getElementById('omoPdfInput').click()" data-t="import_pdf_btn">
+        📄 Import HPD PDF
+      </button>
+      <div class="import-status" id="importStatus"></div>
     </div>
     <button class="btn-close" onclick="closeModal()" aria-label="Close">✕</button>
   </div>
 
-  <!-- Step bar -->
   <div class="step-bar">
     <div class="step-item active" onclick="goTab(0)">
       <div class="step-dot">1</div>
@@ -167,19 +278,14 @@
       <div class="step-dot">2</div>
       <div class="step-label" data-t="step_outcome">Outcome</div>
     </div>
-    <div class="step-line"></div>
-    <div class="step-item" onclick="goTab(2)">
+    <div class="step-line admin-only"></div>
+    <div class="step-item admin-only" onclick="goTab(2)">
       <div class="step-dot">3</div>
       <div class="step-label" data-t="step_invoice">Invoice</div>
     </div>
-    <div class="step-line"></div>
-    <div class="step-item" onclick="goTab(3)">
-      <div class="step-dot">4</div>
-      <div class="step-label" data-t="step_notary">Notary</div>
-    </div>
   </div>
 
-  <!-- ─────────────────── TAB 0: JOB INFO ─────────────────── -->
+  <!-- TAB 0: JOB INFO -->
   <div class="tab-content active" id="tab0">
     <div class="form-grid">
       <div class="form-group">
@@ -196,35 +302,33 @@
           <option value="paid">💰 Paid</option>
         </select>
       </div>
-
       <div class="form-group full">
         <label class="form-label" data-t="lbl_address">Building Address</label>
-        <input id="building_address" class="form-control" placeholder="e.g. 227 Cherry Street, New York NY 10002">
+        <input id="building_address" class="form-control" placeholder="e.g. 227 West 15 Street">
       </div>
       <div class="form-group">
         <label class="form-label" data-t="lbl_apt">Work Location / Apt</label>
-        <input id="work_location_apt" class="form-control" placeholder="e.g. Apt. 11C">
+        <input id="work_location_apt" class="form-control" placeholder="e.g. Apt. 1">
       </div>
       <div class="form-group">
         <label class="form-label" data-t="lbl_date_directed">Date Directed by HPD</label>
         <input id="date_directed" class="form-control" placeholder="MM/DD/YYYY">
       </div>
-
       <div class="form-group">
         <label class="form-label" data-t="lbl_county">County</label>
         <select id="county" class="form-control" onchange="autoBoroughFromCounty()">
-          <option value="" data-t="opt_county_0">— Select county —</option>
-          <option value="Kings" data-t="opt_county_kings">Kings (Brooklyn)</option>
-          <option value="New York" data-t="opt_county_ny">New York (Manhattan)</option>
-          <option value="Bronx" data-t="opt_county_bronx">Bronx</option>
-          <option value="Queens" data-t="opt_county_queens">Queens</option>
-          <option value="Richmond" data-t="opt_county_richmond">Richmond (Staten Island)</option>
+          <option value="">— Select county —</option>
+          <option value="Kings">Kings (Brooklyn)</option>
+          <option value="New York">New York (Manhattan)</option>
+          <option value="Bronx">Bronx</option>
+          <option value="Queens">Queens</option>
+          <option value="Richmond">Richmond (Staten Island)</option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label" data-t="lbl_borough">Borough</label>
         <select id="borough" class="form-control">
-          <option value="" data-t="opt_borough_0">— Auto from county —</option>
+          <option value="">— Auto from county —</option>
           <option value="Brooklyn">Brooklyn</option>
           <option value="Manhattan">Manhattan</option>
           <option value="Bronx">Bronx</option>
@@ -232,19 +336,20 @@
           <option value="Staten Island">Staten Island</option>
         </select>
       </div>
-
       <div class="form-group full">
         <label class="form-label" data-t="lbl_trade">Trade / Type of Work</label>
-        <input id="trade" class="form-control" placeholder="e.g. Carpentry, Plumbing, Electric">
+        <input id="trade" class="form-control" placeholder="e.g. GC, Carpentry, Plumbing">
+      </div>
+      <div class="form-group full">
+        <label class="form-label" data-t="lbl_signer_name">Signer / Printed Name <span class="field-hint" data-t="hint_signer">(appears on affidavit signature line)</span></label>
+        <input id="signer_name" class="form-control" placeholder="e.g. Jaspreet Singh">
       </div>
     </div>
   </div>
 
-  <!-- ─────────────────── TAB 1: OUTCOME ─────────────────── -->
+  <!-- TAB 1: OUTCOME -->
   <div class="tab-content" id="tab1">
     <div class="form-grid">
-
-      <!-- Doc type toggle -->
       <div class="doctype-toggle">
         <div class="doctype-opt active-work" id="dtWork" onclick="setDocType('work')">
           <span class="doctype-icon">✅</span>
@@ -262,12 +367,9 @@
         </div>
       </div>
 
-      <!-- ── WORK SECTION ── -->
+      <!-- WORK SECTION -->
       <div id="workSection" style="display:contents">
-        <div class="section-sep full">
-          <span class="section-sep-label" data-t="sep_work_dates">Work Dates</span>
-          <div class="section-sep-line"></div>
-        </div>
+        <div class="section-sep full"><span class="section-sep-label" data-t="sep_work_dates">Work Dates</span><div class="section-sep-line"></div></div>
         <div class="form-group">
           <label class="form-label" data-t="lbl_work_start">Work Start Date</label>
           <input id="work_start_date" class="form-control" placeholder="MM/DD/YYYY">
@@ -276,93 +378,55 @@
           <label class="form-label" data-t="lbl_work_end">Work End Date</label>
           <input id="work_end_date" class="form-control" placeholder="MM/DD/YYYY">
         </div>
-
-        <div class="section-sep full">
-          <span class="section-sep-label" data-t="sep_work_type">Work Type (6, 7 or 8)</span>
-          <div class="section-sep-line"></div>
-        </div>
+        <div class="section-sep full"><span class="section-sep-label" data-t="sep_contractor">Contractor</span><div class="section-sep-line"></div></div>
+        <div class="form-group full"><label class="form-label" data-t="lbl_contractor_work">Contractor Name</label><input id="work_contractor_name" class="form-control" placeholder="Full name of contractor"></div>
+        <div class="section-sep full"><span class="section-sep-label" data-t="sep_work_type">Work Type (6, 7 or 8)</span><div class="section-sep-line"></div></div>
         <div class="reason-group">
           <button class="reason-pill active-work" id="wt_ALL"         onclick="setWorkType('ALL')"         data-t="wt_all">6 · ALL work completed</button>
           <button class="reason-pill"             id="wt_PARTIAL"     onclick="setWorkType('PARTIAL')"     data-t="wt_partial">7 · PARTIAL work</button>
           <button class="reason-pill"             id="wt_INTERRUPTED" onclick="setWorkType('INTERRUPTED')" data-t="wt_interrupted">8 · INTERRUPTED by owner</button>
         </div>
-
-        <!-- PARTIAL block -->
         <div class="conditional-block" id="wBlock_PARTIAL">
           <div class="form-grid">
-            <div class="form-group full">
-              <label class="form-label" data-t="lbl_partial_reason">Reason for partial work</label>
-              <input id="partial_reason" class="form-control" placeholder="Describe the reason…">
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-t="lbl_partial_amount">Partial Amount ($)</label>
-              <input id="partial_amount" class="form-control" placeholder="0.00">
-            </div>
+            <div class="form-group full"><label class="form-label" data-t="lbl_partial_reason">Reason for partial work</label><input id="partial_reason" class="form-control" placeholder="Describe the reason…"></div>
+            <div class="form-group admin-only"><label class="form-label" data-t="lbl_partial_amount">Partial Amount ($)</label><input id="partial_amount" class="form-control" placeholder="0.00"></div>
           </div>
         </div>
-
-        <!-- INTERRUPTED block -->
         <div class="conditional-block" id="wBlock_INTERRUPTED">
           <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label" data-t="lbl_interrupted_amount">Amount for work done ($)</label>
-              <input id="interrupted_amount" class="form-control" placeholder="0.00">
-            </div>
-            <div class="section-sep full">
-              <span class="section-sep-label" data-t="sep_prevented">Person who prevented work</span>
-              <div class="section-sep-line"></div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-t="lbl_prev_name">Name</label>
-              <input id="prevented_name" class="form-control" placeholder="Full name">
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-t="lbl_prev_rel">Relationship</label>
-              <input id="prevented_rel" class="form-control" placeholder="e.g. Owner, Tenant">
-            </div>
-            <div class="form-group full">
-              <label class="form-label" data-t="lbl_prev_desc">Physical description</label>
-              <input id="prevented_desc" class="form-control" placeholder="e.g. Male, tall, gray hair">
-            </div>
+            <div class="form-group admin-only"><label class="form-label" data-t="lbl_interrupted_amount">Amount for work done ($)</label><input id="interrupted_amount" class="form-control" placeholder="0.00"></div>
+            <div class="section-sep full"><span class="section-sep-label" data-t="sep_prevented">Person who prevented work</span><div class="section-sep-line"></div></div>
+            <div class="form-group"><label class="form-label" data-t="lbl_prev_name">Name</label><input id="prevented_name" class="form-control" placeholder="Full name"></div>
+            <div class="form-group"><label class="form-label" data-t="lbl_prev_rel">Relationship</label><input id="prevented_rel" class="form-control" placeholder="e.g. Owner, Tenant"></div>
+            <div class="form-group full"><label class="form-label" data-t="lbl_prev_desc">Physical description</label><input id="prevented_desc" class="form-control" placeholder="e.g. Male, tall, gray hair"></div>
           </div>
         </div>
       </div>
 
-      <!-- ── NO WORK SECTION ── -->
+      <!-- NO WORK SECTION -->
       <div id="noworkSection" style="display:none">
         <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label" data-t="lbl_service_charge">Service Charge ($)</label>
-            <input id="service_charge" class="form-control" placeholder="0.00">
-          </div>
-
-          <div class="section-sep full">
-            <span class="section-sep-label" data-t="sep_nowork_reason">Reason (4, 5, 6 or 7)</span>
-            <div class="section-sep-line"></div>
-          </div>
+          <div class="form-group admin-only"><label class="form-label" data-t="lbl_service_charge">Service Charge ($)</label><input id="service_charge" class="form-control" placeholder="0.00"></div>
+          <div class="section-sep full"><span class="section-sep-label" data-t="sep_nowork_reason">Reason (4, 5, 6 or 7)</span><div class="section-sep-line"></div></div>
           <div class="reason-group">
             <button class="reason-pill" id="nr_4" onclick="setNoWorkReason('4')" data-t="nr_4">4 · Physically inaccessible</button>
             <button class="reason-pill" id="nr_5" onclick="setNoWorkReason('5')" data-t="nr_5">5 · Work done by others</button>
             <button class="reason-pill" id="nr_6" onclick="setNoWorkReason('6')" data-t="nr_6">6 · Work being done by others</button>
             <button class="reason-pill" id="nr_7" onclick="setNoWorkReason('7')" data-t="nr_7">7 · Access denied</button>
           </div>
-
           <div class="conditional-block" id="nwBlock_4">
             <div class="form-grid">
-              <div class="form-group full">
-                <label class="form-label" data-t="lbl_inacc_reason">Describe inaccessibility</label>
-                <input id="inacc_reason" class="form-control" placeholder="e.g. Door locked, no response to knocking">
-              </div>
-              <div class="form-group"><label class="form-label" data-t="lbl_attempt1">Access attempt 1 (≥72h apart)</label><input id="attempt_date1" class="form-control" placeholder="MM/DD/YYYY"></div>
-              <div class="form-group"><label class="form-label" data-t="lbl_attempt2">Access attempt 2</label><input id="attempt_date2" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group full"><label class="form-label" data-t="lbl_inacc_reason">Describe inaccessibility</label><input id="inacc_reason" class="form-control" placeholder="e.g. Door locked, no response"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_4" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_attempt1">Access attempt 1 <span class="field-hint" data-t="hint_72h">(must be 72h apart)</span></label><input id="attempt_date1" class="form-control" placeholder="MM/DD/YYYY" oninput="check72h()"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_attempt2">Access attempt 2</label><input id="attempt_date2" class="form-control" placeholder="MM/DD/YYYY" oninput="check72h()"></div>
+              <div id="warn72h" class="field-warning" style="display:none" data-t="warn_72h">⚠️ Attempts must be at least 72 hours apart (HPD requirement)</div>
               <div class="form-group"><label class="form-label" data-t="lbl_phone1">Phone attempt 1</label><input id="phone_date1" class="form-control" placeholder="MM/DD/YYYY"></div>
               <div class="form-group"><label class="form-label" data-t="lbl_phone2">Phone attempt 2</label><input id="phone_date2" class="form-control" placeholder="MM/DD/YYYY"></div>
             </div>
           </div>
           <div class="conditional-block" id="nwBlock_5">
-            <div class="form-grid">
-              <div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_5" class="form-control" placeholder="MM/DD/YYYY"></div>
-            </div>
+            <div class="form-grid"><div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_5" class="form-control" placeholder="MM/DD/YYYY"></div></div>
           </div>
           <div class="conditional-block" id="nwBlock_6">
             <div class="form-grid">
@@ -374,105 +438,53 @@
             <div class="form-grid">
               <div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_7" class="form-control" placeholder="MM/DD/YYYY"></div>
               <div class="form-group"><label class="form-label" data-t="lbl_ind_name">Individual name</label><input id="individual_name" class="form-control" placeholder="Full name"></div>
-              <div class="form-group"><label class="form-label" data-t="lbl_ind_rel">Relationship to building</label><input id="individual_rel" class="form-control" placeholder="e.g. Tenant, Owner"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_ind_rel">Relationship</label><input id="individual_rel" class="form-control" placeholder="e.g. Tenant, Owner"></div>
               <div class="form-group"><label class="form-label" data-t="lbl_ind_desc">Physical description</label><input id="individual_desc" class="form-control" placeholder="e.g. Female, medium, dark hair"></div>
-              <div class="form-group"><label class="form-label" data-t="lbl_ind_phone">Telephone number</label><input id="individual_phone" class="form-control" placeholder="000-000-0000"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_ind_phone">Phone number</label><input id="individual_phone" class="form-control" placeholder="000-000-0000"></div>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- ─────────────────── TAB 2: INVOICE ─────────────────── -->
-  <div class="tab-content" id="tab2">
+  <!-- TAB 2: INVOICE (admin only) -->
+  <div class="tab-content admin-only" id="tab2">
     <div class="form-grid">
       <div class="form-group"><label class="form-label" data-t="lbl_invoice_num">Invoice #</label><input id="invoice_number" class="form-control" placeholder="e.g. 2029"></div>
       <div class="form-group"><label class="form-label" data-t="lbl_invoice_date">Invoice Date</label><input id="invoice_date" class="form-control" placeholder="MM/DD/YY"></div>
       <div class="form-group"><label class="form-label" data-t="lbl_work_start_inv">Date Work Started</label><input id="work_start_date_inv" class="form-control" placeholder="MM/DD/YY"></div>
       <div class="form-group"><label class="form-label" data-t="lbl_work_end_inv">Date Work Completed</label><input id="work_end_date_inv" class="form-control" placeholder="MM/DD/YY"></div>
       <div class="form-group full"><label class="form-label" data-t="lbl_rc">RC / Mini RC # (optional)</label><input id="rc_number" class="form-control" placeholder="Leave blank if none"></div>
-
-      <div class="section-sep full">
-        <span class="section-sep-label" data-t="sep_description">Description of Work</span>
-        <div class="section-sep-line"></div>
-      </div>
-      <div class="form-group full"><input id="inv_desc1" class="form-control" placeholder="Row 1 — Main description of work…"></div>
+      <div class="section-sep full"><span class="section-sep-label" data-t="sep_description">Description of Work</span><div class="section-sep-line"></div></div>
+      <div class="form-group full"><input id="inv_desc1" class="form-control" placeholder="Row 1 — Main description…"></div>
       <div class="form-group full"><input id="inv_desc2" class="form-control" placeholder="Row 2"></div>
       <div class="form-group full"><input id="inv_desc3" class="form-control" placeholder="Row 3"></div>
       <div class="form-group full"><input id="inv_desc4" class="form-control" placeholder="Row 4"></div>
       <div class="form-group full"><input id="inv_desc5" class="form-control" placeholder="Row 5"></div>
       <div class="form-group full"><input id="inv_desc6" class="form-control" placeholder="Row 6"></div>
-
-      <div class="section-sep full">
-        <span class="section-sep-label" data-t="sep_materials">Materials &amp; Quantities</span>
-        <div class="section-sep-line"></div>
-      </div>
+      <div class="section-sep full"><span class="section-sep-label" data-t="sep_materials">Materials &amp; Quantities</span><div class="section-sep-line"></div></div>
       <div class="mat-table-wrap">
-        <table class="mat-table">
-          <thead><tr>
-            <th data-t="mat_th_desc">Material Description</th>
-            <th class="qty-col" data-t="mat_th_qty">Qty</th>
-          </tr></thead>
-          <tbody>
-            <tr><td><input id="inv_mat1" class="form-control" placeholder="e.g. INSTALL HINGES – TOTAL DOORS= (1)"></td><td class="qty-col"><input id="inv_qty1" class="form-control" placeholder="1"></td></tr>
-            <tr><td><input id="inv_mat2" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty2" class="form-control" placeholder=""></td></tr>
-            <tr><td><input id="inv_mat3" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty3" class="form-control" placeholder=""></td></tr>
-            <tr><td><input id="inv_mat4" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty4" class="form-control" placeholder=""></td></tr>
-            <tr><td><input id="inv_mat5" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty5" class="form-control" placeholder=""></td></tr>
-            <tr><td><input id="inv_mat6" class="form-control" placeholder=""></td><td class="qty-col"><input id="inv_qty6" class="form-control" placeholder=""></td></tr>
-          </tbody>
-        </table>
+        <table class="mat-table"><thead><tr><th data-t="mat_th_desc">Material Description</th><th class="qty-col" data-t="mat_th_qty">Qty</th></tr></thead>
+        <tbody>
+          <tr><td><input id="inv_mat1" class="form-control" placeholder="e.g. INSTALL HINGES"></td><td class="qty-col"><input id="inv_qty1" class="form-control" placeholder="1"></td></tr>
+          <tr><td><input id="inv_mat2" class="form-control"></td><td class="qty-col"><input id="inv_qty2" class="form-control"></td></tr>
+          <tr><td><input id="inv_mat3" class="form-control"></td><td class="qty-col"><input id="inv_qty3" class="form-control"></td></tr>
+          <tr><td><input id="inv_mat4" class="form-control"></td><td class="qty-col"><input id="inv_qty4" class="form-control"></td></tr>
+          <tr><td><input id="inv_mat5" class="form-control"></td><td class="qty-col"><input id="inv_qty5" class="form-control"></td></tr>
+          <tr><td><input id="inv_mat6" class="form-control"></td><td class="qty-col"><input id="inv_qty6" class="form-control"></td></tr>
+        </tbody></table>
       </div>
-
-      <!-- No-work callout -->
       <div class="callout" id="calloutNoWork" style="display:none">
         <span class="callout-icon">ℹ️</span>
-        <span data-t="callout_nowork">For No Work services: "NO WORK DONE" is auto-set as material and the Service Charge is used as the invoice amount.</span>
+        <span data-t="callout_nowork">For No Work: "NO WORK DONE" is auto-set and Service Charge used as invoice amount.</span>
       </div>
-
-      <div class="section-sep full">
-        <span class="section-sep-label" data-t="sep_amounts">Amounts</span>
-        <div class="section-sep-line"></div>
-      </div>
+      <div class="section-sep full"><span class="section-sep-label" data-t="sep_amounts">Amounts</span><div class="section-sep-line"></div></div>
       <div class="form-group"><label class="form-label" data-t="lbl_bid">Bid Amount ($)</label><input id="bid_amount" class="form-control" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label" data-t="lbl_total">Total Charge ($)</label><input id="total_charge" class="form-control" placeholder="0.00"></div>
     </div>
   </div>
 
-  <!-- ─────────────────── TAB 3: NOTARY ─────────────────── -->
-  <div class="tab-content" id="tab3">
-    <div class="form-grid-3">
-      <div class="form-group">
-        <label class="form-label" data-t="lbl_day">Day</label>
-        <input id="sworn_day" class="form-control" placeholder="e.g. 20">
-      </div>
-      <div class="form-group">
-        <label class="form-label" data-t="lbl_month">Month</label>
-        <select id="sworn_month" class="form-control">
-          <option value="">— Month —</option>
-          <option>January</option><option>February</option><option>March</option>
-          <option>April</option><option>May</option><option>June</option>
-          <option>July</option><option>August</option><option>September</option>
-          <option>October</option><option>November</option><option>December</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label" data-t="lbl_year">Year</label>
-        <input id="sworn_year" class="form-control" placeholder="e.g. 2026">
-      </div>
-    </div>
-    <div class="callout" style="margin-top:20px">
-      <span class="callout-icon">⚖️</span>
-      <div>
-        <strong data-t="step_notary">Notary Public: Rajinder Singh</strong><br>
-        <span data-t="callout_notary">Pre-printed in PDF. Manual signature + stamp required on the printed document.</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal footer -->
   <div class="modal-footer">
     <div class="footer-left" id="footerTabInfo">1 / 4</div>
     <div class="footer-right">
@@ -481,11 +493,56 @@
     </div>
   </div>
 
-</div><!-- /.modal -->
-</div><!-- /.overlay -->
+</div>
+</div>
 
-<!-- Toast -->
+<!-- ═════════════════════════════ MODAL MEDIA ═══════════════════════════════ -->
+<div class="overlay" id="mediaOverlay" onclick="if(event.target===this)closeMediaModal()">
+<div class="modal modal-wide" id="mediaModal">
+  <div class="modal-header">
+    <div class="modal-header-left">
+      <div class="modal-title" id="mediaModalTitle" data-t="media_title">📷 Media</div>
+      <div class="modal-sub" data-t="media_sub">Photos and videos for this OMO</div>
+    </div>
+    <button class="btn-close" onclick="closeMediaModal()">✕</button>
+  </div>
+  <div class="modal-body-scroll" style="padding:20px">
+    <div class="admin-worker-only" id="mediaDropZone">
+      <!-- Upload buttons — labels directly wrap inputs so browser never blocks the file picker -->
+      <div class="media-upload-btns">
+        <label class="media-up-btn media-up-camera">
+          <input type="file" accept="image/*" style="display:none" onchange="handleMediaFiles(this.files)">
+          <span class="mub-icon">📷</span>
+          <span class="mub-label" data-t="media_camera">Camera</span>
+        </label>
+        <label class="media-up-btn media-up-video">
+          <input type="file" accept="video/*" style="display:none" onchange="handleMediaFiles(this.files)">
+          <span class="mub-icon">🎥</span>
+          <span class="mub-label" data-t="media_video">Video</span>
+        </label>
+        <label class="media-up-btn media-up-gallery">
+          <input type="file" multiple accept="image/*,video/*,.pdf" style="display:none" onchange="handleMediaFiles(this.files)">
+          <span class="mub-icon">🖼️</span>
+          <span class="mub-label" data-t="media_gallery">Gallery / Files</span>
+        </label>
+      </div>
+    </div>
+    <div id="mediaGrid" class="media-grid" style="margin-top:16px"></div>
+  </div>
+</div>
+</div>
+
 <div id="toast"></div>
+
+<!-- Global context menu — rendered at body level to avoid stacking context issues -->
+<div id="globalCtxMenu" class="ctx-menu">
+  <button class="ctx-item" id="ctxAffidavit"><span class="ctx-icon">📄</span> <span class="ctx-item-label"></span></button>
+  <button class="ctx-item" id="ctxInvoice"><span class="ctx-icon">🧾</span> <span class="ctx-item-label"></span></button>
+  <button class="ctx-item" id="ctxZip"><span class="ctx-icon">📦</span> <span class="ctx-item-label"></span></button>
+  <div class="ctx-sep admin-worker-ctx"></div>
+  <button class="ctx-item admin-worker-ctx" id="ctxEdit"><span class="ctx-icon">✏️</span> <span class="ctx-item-label"></span></button>
+  <button class="ctx-item ctx-danger admin-ctx" id="ctxDelete"><span class="ctx-icon">🗑</span> <span class="ctx-item-label"></span></button>
+</div>
 
 <script src="/static/app.js"></script>
 </body>
