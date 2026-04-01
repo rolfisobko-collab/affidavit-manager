@@ -91,6 +91,7 @@ INVOICE_FIELDS = {
     "inv_desc6"         : "DESCRIPTION OF WORK DONERow6",
     "bid_amount"        : "Bid Amount_2",
     "total_charge"      : "TOTAL CHARGE",
+    "signer_name"       : "NAME Please Print",
 }
 
 # Materiales: campos '1'-'6' del invoice y 6 primeros campos 'Quanity'
