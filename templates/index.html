@@ -382,12 +382,13 @@
         <div class="section-sep full"><span class="section-sep-label" data-t="sep_work_dates">Work Dates</span><div class="section-sep-line"></div></div>
         <div class="form-group">
           <label class="form-label" data-t="lbl_work_start">Work Start Date</label>
-          <input id="work_start_date" class="form-control" placeholder="MM/DD/YYYY">
+          <input id="work_start_date" class="form-control" placeholder="MM/DD/YYYY" oninput="checkDatesWarning()">
         </div>
         <div class="form-group">
           <label class="form-label" data-t="lbl_work_end">Work End Date</label>
-          <input id="work_end_date" class="form-control" placeholder="MM/DD/YYYY">
+          <input id="work_end_date" class="form-control" placeholder="MM/DD/YYYY" oninput="checkDatesWarning()">
         </div>
+        <div id="warnDates" class="field-warning" style="display:none" data-t="warn_dates">⚠️ Required to generate the affidavit PDF</div>
         <div class="section-sep full"><span class="section-sep-label" data-t="sep_contractor">Contractor</span><div class="section-sep-line"></div></div>
         <div class="form-group full"><label class="form-label" data-t="lbl_contractor_work">Contractor Name</label><input id="work_contractor_name" class="form-control" placeholder="Full name of contractor"></div>
         <div class="section-sep full"><span class="section-sep-label" data-t="sep_work_type">Work Type (6, 7 or 8)</span><div class="section-sep-line"></div></div>

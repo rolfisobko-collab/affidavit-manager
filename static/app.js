@@ -90,6 +90,7 @@ const LANG = {
     lbl_contractor_work: 'Contractor Name',
     hint_72h: '(must be 72h apart)',
     warn_72h: '⚠️ Attempts must be at least 72 hours apart (HPD requirement)',
+    warn_dates: '⚠️ Required to generate the affidavit PDF',
     lbl_signer_name: 'Signer / Printed Name',
     hint_signer: '(appears on affidavit signature line)',
     action_aff: 'Print Affidavit', action_inv: 'Print Invoice', action_zip: 'Download All',
@@ -212,6 +213,7 @@ const LANG = {
     lbl_contractor_work: 'Nombre del Contratista',
     hint_72h: '(deben ser 72h de diferencia)',
     warn_72h: '⚠️ Los intentos deben tener al menos 72 horas de diferencia (requerimiento HPD)',
+    warn_dates: '⚠️ Requerido para generar el PDF del affidavit',
     lbl_signer_name: 'Firmante / Nombre impreso',
     hint_signer: '(aparece en la línea de firma del affidavit)',
     action_aff: 'Imprimir Affidavit', action_inv: 'Imprimir Factura', action_zip: 'Descargar Todo',
@@ -361,6 +363,14 @@ function setWorkType(wt) {
   });
   $('wBlock_PARTIAL').classList.toggle('visible', wt === 'PARTIAL');
   $('wBlock_INTERRUPTED').classList.toggle('visible', wt === 'INTERRUPTED');
+}
+
+// ── Warning fechas obligatorias para work_performed ────────────────────────
+function checkDatesWarning() {
+  const warn = $('warnDates');
+  if (!warn) return;
+  const missing = !val('work_start_date').trim() || !val('work_end_date').trim();
+  warn.style.display = (docType === 'work' && missing) ? '' : 'none';
 }
 
 // ── Validación 72h entre intentos de acceso (razón 4) ────────────────────────
