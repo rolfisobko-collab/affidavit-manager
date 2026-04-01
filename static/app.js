@@ -590,6 +590,17 @@ async function deleteService(id) {
 }
 
 // ── Status transition ─────────────────────────────────────────────────────────
+function openModalForStatus(id, docTypeOverride) {
+  // Find the record and open modal with doc_type pre-set to work or nowork
+  const rec = services.find(r => r.id === id);
+  if (!rec) return;
+  const recCopy = Object.assign({}, rec, { doc_type: docTypeOverride });
+  openModal(recCopy);
+  // Pre-set the status to match the doc type
+  if (docTypeOverride === 'work') set('status', 'work_performed');
+  if (docTypeOverride === 'nowork') set('status', 'no_work_performed');
+}
+
 async function setStatus(id, status) {
   const res = await fetch(`/api/records/${id}/status`, {
     method: 'PATCH',
@@ -728,8 +739,9 @@ function renderAll() {
     const wfBtns = [];
     if (role !== 'notary') {
       if (r.status === 'pending') {
-        wfBtns.push(`<button class="act-primary act-work" onclick="setStatus(${r.id},'work_performed')">${t('action_mark_work')}</button>`);
-        wfBtns.push(`<button class="act-primary act-nowork" onclick="setStatus(${r.id},'no_work_performed')">${t('action_mark_nowork')}</button>`);
+        // Open modal pre-set to work/nowork so user fills form before changing status
+        wfBtns.push(`<button class="act-primary act-work" onclick="openModalForStatus(${r.id},'work')">${t('action_mark_work')}</button>`);
+        wfBtns.push(`<button class="act-primary act-nowork" onclick="openModalForStatus(${r.id},'nowork')">${t('action_mark_nowork')}</button>`);
       }
       if (role === 'admin') {
         if (r.status === 'work_performed' || r.status === 'no_work_performed')
@@ -737,6 +749,16 @@ function renderAll() {
         if (r.status === 'submitted')
           wfBtns.push(`<button class="act-primary act-paid" onclick="setStatus(${r.id},'paid')">${t('action_paid')}</button>`);
       }
+    }
+
+    // ── Print button always visible based on status ──
+    const printBtns = [];
+    if (r.status === 'work_performed' || r.status === 'submitted' || r.status === 'paid') {
+      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
+      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
+    } else if (r.status === 'no_work_performed' || r.status === 'submitted' || r.status === 'paid') {
+      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
+      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
     }
 
     const stripeClass = `stripe-${r.status === 'work_performed' ? 'work' : r.status === 'no_work_performed' ? 'nowork' : r.status || 'pending'}`;
@@ -757,6 +779,7 @@ function renderAll() {
       </div>
       <div class="card-actions">
         ${wfBtns.join('')}
+        ${printBtns.join('')}
         <button class="act-media-btn" onclick="openMediaModal(${r.id},'${esc(r.omo_number||r.id)}')">📷 Media</button>
         <button class="act-more-btn" onclick="toggleCtx(event,${r.id})" title="More actions">•••</button>
       </div>
