@@ -487,7 +487,7 @@ async function save() {
     btn.disabled = false; btn.textContent = t('save');
     return;
   }
-  if (docType === 'work' && (!val('work_start_date').trim() || !val('work_end_date').trim())) {
+  if (docType === 'work' && val('status') === 'work_performed' && (!val('work_start_date').trim() || !val('work_end_date').trim())) {
     showToast(t('err_dates_required'), 'error');
     btn.disabled = false; btn.textContent = t('save');
     return;
