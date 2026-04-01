@@ -591,14 +591,14 @@ async function deleteService(id) {
 
 // ── Status transition ─────────────────────────────────────────────────────────
 function openModalForStatus(id, docTypeOverride) {
-  // Find the record and open modal with doc_type pre-set to work or nowork
   const rec = services.find(r => r.id === id);
   if (!rec) return;
   const recCopy = Object.assign({}, rec, { doc_type: docTypeOverride });
   openModal(recCopy);
-  // Pre-set the status to match the doc type
+  // Pre-set status and go directly to Outcome tab (tab index 1)
   if (docTypeOverride === 'work') set('status', 'work_performed');
   if (docTypeOverride === 'nowork') set('status', 'no_work_performed');
+  goTab(1);
 }
 
 async function setStatus(id, status) {
@@ -751,12 +751,12 @@ function renderAll() {
       }
     }
 
-    // ── Print buttons always visible when not pending ──
-    const printBtns = [];
+    // ── Print buttons ─ always visible next to status buttons when not pending ──
     if (r.status && r.status !== 'pending') {
-      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
-      printBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
+      wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
+      wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
     }
+    const printBtns = []; // now merged into wfBtns
 
     const stripeClass = `stripe-${r.status === 'work_performed' ? 'work' : r.status === 'no_work_performed' ? 'nowork' : r.status || 'pending'}`;
 
@@ -776,7 +776,6 @@ function renderAll() {
       </div>
       <div class="card-actions">
         ${wfBtns.join('')}
-        ${printBtns.join('')}
         <button class="act-media-btn" onclick="openMediaModal(${r.id},'${esc(r.omo_number||r.id)}')">📷 Media</button>
         <button class="act-more-btn" onclick="toggleCtx(event,${r.id})" title="More actions">•••</button>
       </div>
