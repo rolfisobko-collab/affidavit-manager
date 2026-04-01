@@ -33,7 +33,7 @@ COUNTY_BOROUGH = {
 WORK_FIELDS = {
     # nombre_en_record  : (nombre_campo_pdf, índice_si_duplicado)
     "omo_number"        : "1",     # header pág 1, ítem 3 y header pág 2 (mismo nombre → sync)
-    "county"            : "2",
+    # county ('2') lo completa la escribana — NO se rellena desde el sistema
     "date_directed"     : "4",
     "building_address"  : "5",
     "work_start_date"   : "6",     # "beginning on ___"
@@ -51,7 +51,7 @@ WORK_FIELDS = {
 
 NOWORK_FIELDS = {
     "omo_number"        : "1",     # header + ítem 2 OMO# (sync automático)
-    "county"            : "2",
+    # county ('2') lo completa la escribana — NO se rellena desde el sistema
     "building_address"  : "23",    # "to go to building located at ___"
     "service_charge"    : "4",
     "inacc_reason"      : "5",     # línea 1 de inaccesibilidad
