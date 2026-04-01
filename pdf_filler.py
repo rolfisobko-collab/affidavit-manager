@@ -133,6 +133,15 @@ def _build_affidavit_values(record: dict) -> dict:
         if rec_key == "sworn_year" and len(val) >= 4:
             val = val[-2:]
 
+        # arrival_5/6/7 no existen en record → mapear arrival_date al campo correcto según razón
+        if rec_key in ("arrival_5", "arrival_6", "arrival_7"):
+            reason = str(record.get("nowork_reason") or "")
+            reason_to_key = {"5": "arrival_5", "6": "arrival_6", "7": "arrival_7"}
+            if reason_to_key.get(reason) == rec_key:
+                val = record.get("arrival_date", "") or ""
+            else:
+                val = ""
+
         # inacc_reason2 no existe como campo en record → se divide inacc_reason
         if rec_key == "inacc_reason2":
             full = record.get("inacc_reason", "") or ""
