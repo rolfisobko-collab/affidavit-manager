@@ -428,13 +428,8 @@ function openModal(rec = null) {
   $('modalTitle').textContent = t(rec ? 'modal_edit' : 'modal_new');
   $('modalSub').textContent   = t(rec ? 'modal_sub_edit' : 'modal_sub_new');
 
-  // Reset all fields
-  FORM_FIELDS.forEach(id => set(id, ''));
-
-  // Pre-fill signer_name with logged-in user's full name for new records
-  if (!rec && currentUser?.full_name) {
-    set('signer_name', currentUser.full_name);
-  }
+  // Reset all fields (except signer_name which is hardcoded)
+  FORM_FIELDS.forEach(id => { if (id !== 'signer_name') set(id, ''); });
 
   if (rec) {
     FORM_FIELDS.forEach(id => {
