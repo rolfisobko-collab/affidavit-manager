@@ -38,7 +38,7 @@ WORK_FIELDS = {
     "building_address"  : "5",
     "work_start_date"   : "6",     # "beginning on ___"
     "work_end_date"     : "7",     # "completed on ___"
-    "work_contractor_name": "3",  # contractor name — campo 3 del affidavit
+    # work_contractor_name: campo '3' ya tiene el texto del juramento hardcodeado en el template — NO se pisa
     "signer_name"       : "15",   # Type or Print Name del firmante (pág 2)
     "partial_reason"    : "8",
     "partial_amount"    : "9",
