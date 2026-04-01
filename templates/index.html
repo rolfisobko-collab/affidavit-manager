@@ -522,12 +522,12 @@
       <!-- Upload buttons — labels directly wrap inputs so browser never blocks the file picker -->
       <div class="media-upload-btns">
         <label class="media-up-btn media-up-camera">
-          <input type="file" accept="image/*" style="display:none" onchange="handleMediaFiles(this.files)">
+          <input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleMediaFiles(this.files)">
           <span class="mub-icon">📷</span>
           <span class="mub-label" data-t="media_camera">Camera</span>
         </label>
         <label class="media-up-btn media-up-video">
-          <input type="file" accept="video/*" style="display:none" onchange="handleMediaFiles(this.files)">
+          <input type="file" accept="video/*" capture="camcorder" style="display:none" onchange="handleMediaFiles(this.files)">
           <span class="mub-icon">🎥</span>
           <span class="mub-label" data-t="media_video">Video</span>
         </label>
