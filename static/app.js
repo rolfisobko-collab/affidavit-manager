@@ -751,12 +751,9 @@ function renderAll() {
       }
     }
 
-    // ── Print buttons ─ always visible next to status buttons when not pending ──
-    if (r.status && r.status !== 'pending') {
-      wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
-      wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
-    }
-    const printBtns = []; // now merged into wfBtns
+    // ── Print buttons always visible ──
+    wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
+    wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
 
     const stripeClass = `stripe-${r.status === 'work_performed' ? 'work' : r.status === 'no_work_performed' ? 'nowork' : r.status || 'pending'}`;
 
