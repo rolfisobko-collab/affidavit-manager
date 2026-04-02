@@ -621,7 +621,7 @@ def list_media(rec_id):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute(f"SELECT * FROM media WHERE record_id={ph()} ORDER BY id", (rec_id,))
+        cur.execute(f"SELECT id,record_id,filename,orig_name,mime_type,uploaded_by,created_at FROM media WHERE record_id={ph()} ORDER BY id", (rec_id,))
         rows = fetchall(cur)
     finally:
         conn.close()
