@@ -649,10 +649,14 @@ function isNotary() { return currentUser?.role === 'notary'; }
 
 function applyRoleUI() {
   const role = currentUser?.role || 'worker';
-  // Set body class so CSS controls admin-only visibility (more robust than inline style)
+  // Body class drives ALL admin-only visibility via CSS — never touch style.display on admin-only elements
   document.body.classList.toggle('role-admin',  role === 'admin');
   document.body.classList.toggle('role-worker', role === 'worker');
   document.body.classList.toggle('role-notary', role === 'notary');
+  // Remove any residual inline style.display from admin-only elements so CSS takes over
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.removeProperty('display');
+  });
   // admin-worker-only and worker-notary-only still handled by JS
   document.querySelectorAll('.admin-worker-only').forEach(el => {
     el.style.display = (role === 'admin' || role === 'worker') ? '' : 'none';
