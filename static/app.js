@@ -462,6 +462,7 @@ function openModal(rec = null) {
   const importSt = $('importStatus');
   if (importSt) { importSt.textContent = ''; importSt.className = 'import-status'; }
   document.querySelectorAll('.autofilled').forEach(el => el.classList.remove('autofilled'));
+  applyRoleUI(); // re-apply every time modal opens so admin-only fields stay hidden for workers
   $('overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -648,9 +649,11 @@ function isNotary() { return currentUser?.role === 'notary'; }
 
 function applyRoleUI() {
   const role = currentUser?.role || 'worker';
-  document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = (role === 'admin') ? '' : 'none';
-  });
+  // Set body class so CSS controls admin-only visibility (more robust than inline style)
+  document.body.classList.toggle('role-admin',  role === 'admin');
+  document.body.classList.toggle('role-worker', role === 'worker');
+  document.body.classList.toggle('role-notary', role === 'notary');
+  // admin-worker-only and worker-notary-only still handled by JS
   document.querySelectorAll('.admin-worker-only').forEach(el => {
     el.style.display = (role === 'admin' || role === 'worker') ? '' : 'none';
   });
