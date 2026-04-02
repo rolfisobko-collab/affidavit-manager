@@ -408,7 +408,7 @@ const FORM_FIELDS = [
   'signer_name',
   'partial_reason', 'partial_amount',
   'interrupted_amount', 'prevented_name', 'prevented_rel', 'prevented_desc',
-  'service_charge', 'inacc_reason',
+  'service_charge',
   'attempt_date1', 'attempt_date2', 'phone_date1', 'phone_date2',
   'arrival_date_4', 'arrival_date_5', 'arrival_date_6', 'arrival_date_7',
   'contractor_name',
@@ -530,7 +530,6 @@ async function save() {
     // No-work fields
     service_charge:    docType === 'nowork' ? val('service_charge') : '',
     nowork_reason:     docType === 'nowork' ? noworkReason          : '',
-    inacc_reason:      noworkReason === '4' ? val('inacc_reason')   : '',
     attempt_date1:     noworkReason === '4' ? val('attempt_date1')  : '',
     attempt_date2:     noworkReason === '4' ? val('attempt_date2')  : '',
     phone_date1:       noworkReason === '4' ? val('phone_date1')    : '',
