@@ -35,6 +35,22 @@ DB_PATH     = os.path.join(BASE_DIR, "records.db")
 MEDIA_DIR   = os.path.join(BASE_DIR, "media")
 OUTPUT_DIR  = os.path.join(BASE_DIR, "output")
 
+# ── Cloudinary (optional) ─────────────────────────────────────────────────────
+CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY    = os.environ.get("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
+USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
+
+if USE_CLOUDINARY:
+    import cloudinary
+    import cloudinary.uploader
+    cloudinary.config(
+        cloud_name = CLOUDINARY_CLOUD_NAME,
+        api_key    = CLOUDINARY_API_KEY,
+        api_secret = CLOUDINARY_API_SECRET,
+        secure     = True
+    )
+
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "mp4", "mov", "avi", "pdf"}
 
 app = Flask(__name__)
@@ -220,12 +236,16 @@ def init_db():
                 cur.execute(f"ALTER TABLE records ADD COLUMN {col} {typ}")
             except Exception:
                 pass
-        # Migrar columna file_data en media si no existe
-        try:
-            blob_t = "BYTEA" if USE_POSTGRES else "BLOB"
-            cur.execute(f"ALTER TABLE media ADD COLUMN file_data {blob_t}")
-        except Exception:
-            pass
+        # Migrar columnas en media si no existen
+        for media_col, media_typ in [
+            ("file_data", "BYTEA" if USE_POSTGRES else "BLOB"),
+            ("cloud_url", "TEXT"),
+            ("cloud_id",  "TEXT"),
+        ]:
+            try:
+                cur.execute(f"ALTER TABLE media ADD COLUMN {media_col} {media_typ}")
+            except Exception:
+                pass
         # Admin por defecto
         try:
             cur.execute(
@@ -642,23 +662,40 @@ def upload_media(rec_id):
     ext       = file.filename.rsplit(".", 1)[1].lower()
     unique    = f"{rec_id}_{uuid.uuid4().hex}.{ext}"
     file_data = file.read()
+    cloud_url = None
+    cloud_id  = None
+
+    if USE_CLOUDINARY:
+        import io
+        res_type = "video" if ext in {"mp4", "mov", "avi"} else "image" if ext in {"jpg","jpeg","png","gif","webp"} else "raw"
+        result   = cloudinary.uploader.upload(
+            io.BytesIO(file_data),
+            public_id    = f"affidavit/{rec_id}/{unique}",
+            resource_type= res_type,
+            overwrite    = True
+        )
+        cloud_url = result.get("secure_url", "")
+        cloud_id  = result.get("public_id", "")
+
     conn = get_connection()
     try:
         cur = conn.cursor()
+        # Store file_data in DB only when Cloudinary is NOT available
+        db_file_data = None if USE_CLOUDINARY else (psycopg2.Binary(file_data) if USE_POSTGRES else file_data)
         if USE_POSTGRES:
             cur.execute(
-                f"INSERT INTO media (record_id,filename,orig_name,mime_type,file_data,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()}) RETURNING id",
-                (rec_id, unique, secure_filename(file.filename), file.content_type, psycopg2.Binary(file_data), str(session.get("user_id")))
+                f"INSERT INTO media (record_id,filename,orig_name,mime_type,file_data,cloud_url,cloud_id,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()}) RETURNING id",
+                (rec_id, unique, secure_filename(file.filename), file.content_type, db_file_data, cloud_url, cloud_id, str(session.get("user_id")))
             )
             mid = cur.fetchone()[0]
         else:
             cur.execute(
-                f"INSERT INTO media (record_id,filename,orig_name,mime_type,file_data,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",
-                (rec_id, unique, secure_filename(file.filename), file.content_type, file_data, str(session.get("user_id")))
+                f"INSERT INTO media (record_id,filename,orig_name,mime_type,file_data,cloud_url,cloud_id,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",
+                (rec_id, unique, secure_filename(file.filename), file.content_type, db_file_data, cloud_url, cloud_id, str(session.get("user_id")))
             )
             mid = cur.lastrowid
         conn.commit()
-        cur.execute(f"SELECT id,record_id,filename,orig_name,mime_type,uploaded_by,created_at FROM media WHERE id={ph()}", (mid,))
+        cur.execute(f"SELECT id,record_id,filename,orig_name,mime_type,cloud_url,uploaded_by,created_at FROM media WHERE id={ph()}", (mid,))
         row = fetchone(cur)
     finally:
         conn.close()
@@ -696,21 +733,27 @@ def serve_media(rec_id, filename):
     try:
         cur = conn.cursor()
         cur.execute(
-            f"SELECT file_data, mime_type FROM media WHERE record_id={ph()} AND filename={ph()}",
+            f"SELECT file_data, mime_type, cloud_url FROM media WHERE record_id={ph()} AND filename={ph()}",
             (rec_id, secure_filename(filename))
         )
         row = fetchone(cur)
     finally:
         conn.close()
-    if not row or not row.get("file_data"):
-        # Fallback: try filesystem for old files uploaded before migration
-        path = os.path.join(MEDIA_DIR, str(rec_id), secure_filename(filename))
-        if os.path.exists(path):
-            return send_file(path)
+    if not row:
         return jsonify({"error": "Not found"}), 404
-    data = bytes(row["file_data"])
-    mime = row.get("mime_type") or "application/octet-stream"
-    return Response(data, mimetype=mime)
+    # Cloudinary: redirect to CDN URL
+    if row.get("cloud_url"):
+        return redirect(row["cloud_url"])
+    # DB bytea fallback
+    if row.get("file_data"):
+        data = bytes(row["file_data"])
+        mime = row.get("mime_type") or "application/octet-stream"
+        return Response(data, mimetype=mime)
+    # Filesystem fallback for very old files
+    path = os.path.join(MEDIA_DIR, str(rec_id), secure_filename(filename))
+    if os.path.exists(path):
+        return send_file(path)
+    return jsonify({"error": "Not found"}), 404
 
 
 # ─── Batch download ───────────────────────────────────────────────────────────
