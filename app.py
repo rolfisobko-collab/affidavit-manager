@@ -11,7 +11,7 @@ import zipfile
 from datetime import datetime, timezone
 from functools import wraps
 
-from flask import (Flask, request, jsonify, send_file,
+from flask import (Flask, request, jsonify, send_file, Response,
                    render_template, session, redirect, url_for)
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS media (
     filename   TEXT NOT NULL,
     orig_name  TEXT,
     mime_type  TEXT,
+    file_data  {blob_type},
     uploaded_by TEXT,
     created_at {ts_default}
 )
@@ -183,9 +184,13 @@ CREATE TABLE IF NOT EXISTS media (
 
 def _fmt(schema):
     return (
-        schema.replace("{pk}", "SERIAL PRIMARY KEY").replace("{ts_default}", "TIMESTAMP DEFAULT NOW()")
+        schema.replace("{pk}", "SERIAL PRIMARY KEY")
+              .replace("{ts_default}", "TIMESTAMP DEFAULT NOW()")
+              .replace("{blob_type}", "BYTEA")
         if USE_POSTGRES else
-        schema.replace("{pk}", "INTEGER PRIMARY KEY AUTOINCREMENT").replace("{ts_default}", "TEXT DEFAULT (datetime('now'))")
+        schema.replace("{pk}", "INTEGER PRIMARY KEY AUTOINCREMENT")
+              .replace("{ts_default}", "TEXT DEFAULT (datetime('now'))")
+              .replace("{blob_type}", "BLOB")
     )
 
 MIGRATION_COLS = [
@@ -215,6 +220,12 @@ def init_db():
                 cur.execute(f"ALTER TABLE records ADD COLUMN {col} {typ}")
             except Exception:
                 pass
+        # Migrar columna file_data en media si no existe
+        try:
+            blob_t = "BYTEA" if USE_POSTGRES else "BLOB"
+            cur.execute(f"ALTER TABLE media ADD COLUMN file_data {blob_t}")
+        except Exception:
+            pass
         # Admin por defecto
         try:
             cur.execute(
@@ -628,28 +639,26 @@ def upload_media(rec_id):
     file = request.files["file"]
     if not file.filename or not allowed_file(file.filename):
         return jsonify({"error": "File type not allowed"}), 400
-    ext      = file.filename.rsplit(".", 1)[1].lower()
-    unique   = f"{rec_id}_{uuid.uuid4().hex}.{ext}"
-    rec_dir  = os.path.join(MEDIA_DIR, str(rec_id))
-    os.makedirs(rec_dir, exist_ok=True)
-    file.save(os.path.join(rec_dir, unique))
+    ext       = file.filename.rsplit(".", 1)[1].lower()
+    unique    = f"{rec_id}_{uuid.uuid4().hex}.{ext}"
+    file_data = file.read()
     conn = get_connection()
     try:
         cur = conn.cursor()
         if USE_POSTGRES:
             cur.execute(
-                f"INSERT INTO media (record_id,filename,orig_name,mime_type,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()}) RETURNING id",
-                (rec_id, unique, secure_filename(file.filename), file.content_type, str(session.get("user_id")))
+                f"INSERT INTO media (record_id,filename,orig_name,mime_type,file_data,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()}) RETURNING id",
+                (rec_id, unique, secure_filename(file.filename), file.content_type, psycopg2.Binary(file_data), str(session.get("user_id")))
             )
             mid = cur.fetchone()[0]
         else:
             cur.execute(
-                f"INSERT INTO media (record_id,filename,orig_name,mime_type,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()})",
-                (rec_id, unique, secure_filename(file.filename), file.content_type, str(session.get("user_id")))
+                f"INSERT INTO media (record_id,filename,orig_name,mime_type,file_data,uploaded_by) VALUES ({ph()},{ph()},{ph()},{ph()},{ph()},{ph()})",
+                (rec_id, unique, secure_filename(file.filename), file.content_type, file_data, str(session.get("user_id")))
             )
             mid = cur.lastrowid
         conn.commit()
-        cur.execute(f"SELECT * FROM media WHERE id={ph()}", (mid,))
+        cur.execute(f"SELECT id,record_id,filename,orig_name,mime_type,uploaded_by,created_at FROM media WHERE id={ph()}", (mid,))
         row = fetchone(cur)
     finally:
         conn.close()
@@ -667,9 +676,13 @@ def delete_media(media_id):
         cur.execute(f"SELECT * FROM media WHERE id={ph()}", (media_id,))
         m = fetchone(cur)
         if m:
-            path = os.path.join(MEDIA_DIR, str(m["record_id"]), m["filename"])
-            if os.path.exists(path):
-                os.remove(path)
+            # Also try to remove from filesystem for any old files
+            path = os.path.join(MEDIA_DIR, str(m["record_id"]), m.get("filename",""))
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception:
+                pass
             cur.execute(f"DELETE FROM media WHERE id={ph()}", (media_id,))
             conn.commit()
     finally:
@@ -679,10 +692,25 @@ def delete_media(media_id):
 @app.route("/media/<int:rec_id>/<filename>")
 @login_required
 def serve_media(rec_id, filename):
-    path = os.path.join(MEDIA_DIR, str(rec_id), secure_filename(filename))
-    if not os.path.exists(path):
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT file_data, mime_type FROM media WHERE record_id={ph()} AND filename={ph()}",
+            (rec_id, secure_filename(filename))
+        )
+        row = fetchone(cur)
+    finally:
+        conn.close()
+    if not row or not row.get("file_data"):
+        # Fallback: try filesystem for old files uploaded before migration
+        path = os.path.join(MEDIA_DIR, str(rec_id), secure_filename(filename))
+        if os.path.exists(path):
+            return send_file(path)
         return jsonify({"error": "Not found"}), 404
-    return send_file(path)
+    data = bytes(row["file_data"])
+    mime = row.get("mime_type") or "application/octet-stream"
+    return Response(data, mimetype=mime)
 
 
 # ─── Batch download ───────────────────────────────────────────────────────────
