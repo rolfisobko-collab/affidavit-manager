@@ -201,32 +201,27 @@ def _build_invoice_values(record: dict) -> dict:
     # ── Lógica específica para No Work Performed ──────────────────────────────
     if record.get("doc_type") == "nowork":
         svc = (record.get("service_charge") or "0.00").strip()
-        if not values.get("Bid Amount_2"):
-            values["Bid Amount_2"] = svc
-        if not values.get("TOTAL CHARGE"):
-            values["TOTAL CHARGE"] = svc
+        values["Bid Amount_2"] = svc
+        values["TOTAL CHARGE"] = svc
+
+        # Limpiar TODOS los campos de descripción — no queremos inv_desc del OMO
+        for i in range(1, 9):
+            values.pop(f"DESCRIPTION OF WORK DONERow{i}", None)
 
         reason = str(record.get("nowork_reason") or "")
         arrival = record.get("arrival_date") or ""
+        date_str = f" ON {arrival.upper()}" if arrival else ""
 
-        # Descripción según razón seleccionada — texto del affidavit
         if reason == "4":
-            inacc = (record.get("inacc_reason") or "").upper()
             values["DESCRIPTION OF WORK DONERow1"] = "NO WORK PERFORMED – AREA PHYSICALLY INACCESSIBLE."
-            if inacc:
-                values["DESCRIPTION OF WORK DONERow2"] = f"INACCESSIBILITY DUE TO: {inacc}"
         elif reason == "5":
-            date_str = f" ON {arrival.upper()}" if arrival else ""
             values["DESCRIPTION OF WORK DONERow1"] = f"NO WORK PERFORMED – WHEN I ARRIVED AT THE WORK SITE{date_str},"
             values["DESCRIPTION OF WORK DONERow2"] = "I FOUND THE WORK DESCRIBED IN THE OMO HAD BEEN COMPLETED BY OTHERS."
         elif reason == "6":
-            date_str = f" ON {arrival.upper()}" if arrival else ""
             values["DESCRIPTION OF WORK DONERow1"] = f"NO WORK PERFORMED – WHEN I ARRIVED AT THE WORK SITE{date_str},"
             values["DESCRIPTION OF WORK DONERow2"] = "I FOUND THE WORK DESCRIBED IN THE OMO WAS BEING PERFORMED BY OTHERS."
         elif reason == "7":
-            date_str = f" ON {arrival.upper()}" if arrival else ""
-            values["DESCRIPTION OF WORK DONERow1"] = f"NO WORK PERFORMED – WHEN I ARRIVED AT THE WORK SITE{date_str},"
-            values["DESCRIPTION OF WORK DONERow2"] = "I WAS DENIED ACCESS BY THE TENANT, OCCUPANT OR OWNER."
+            values["DESCRIPTION OF WORK DONERow1"] = "I WAS DENIED ACCESS BY THE TENANT, OCCUPANT OR OWNER."
         else:
             values["DESCRIPTION OF WORK DONERow1"] = "NO WORK PERFORMED – SERVICE CHARGE ONLY"
         # NO setear campo '1' (material) → template mantiene "NO WORK DONE"
