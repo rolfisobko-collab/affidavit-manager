@@ -94,6 +94,10 @@
           <p class="page-subtitle" data-t="page_omos_sub">Manage HPD service records</p>
         </div>
         <div class="page-topbar-right">
+          <button class="btn-bulk admin-worker-only" onclick="openBulkModal()" title="Add multiple OMOs at once">
+            <span>⚡</span>
+            <span>Bulk Add</span>
+          </button>
           <button class="btn-new admin-worker-only" onclick="openModal()">
             <span>＋</span>
             <span data-t="new_btn">New OMO</span>
@@ -496,6 +500,59 @@
     </div>
   </div>
 
+</div>
+</div>
+
+<!-- ═══════════════════════════ MODAL BULK ADD ══════════════════════════════ -->
+<div class="overlay" id="bulkOverlay" onclick="if(event.target===this)closeBulkModal()">
+<div class="modal" id="bulkModal" style="max-width:520px">
+  <div class="modal-header">
+    <div class="modal-header-left">
+      <div class="modal-title">⚡ Bulk Add OMOs</div>
+      <div class="modal-sub">Paste one OMO number per line — all created as Pending</div>
+    </div>
+    <button class="btn-close" onclick="closeBulkModal()">✕</button>
+  </div>
+  <div class="modal-body-scroll" style="padding:20px;display:flex;flex-direction:column;gap:16px">
+    <div class="form-group full">
+      <label class="form-label">OMO Numbers <span style="color:var(--text-3);font-weight:400">(one per line)</span></label>
+      <textarea id="bulkOmoInput" class="form-control" rows="8"
+        placeholder="EQ20453&#10;EQ20454&#10;EQ20455&#10;…"
+        style="font-family:monospace;font-size:.9rem;resize:vertical"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">County <span style="color:var(--text-3);font-weight:400">(optional, applies to all)</span></label>
+        <select id="bulkCounty" class="form-control" onchange="autoBulkBorough()">
+          <option value="">— Leave blank —</option>
+          <option value="Kings">Kings (Brooklyn)</option>
+          <option value="New York">New York (Manhattan)</option>
+          <option value="Bronx">Bronx</option>
+          <option value="Queens">Queens</option>
+          <option value="Richmond">Richmond (Staten Island)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Borough <span style="color:var(--text-3);font-weight:400">(auto)</span></label>
+        <select id="bulkBorough" class="form-control">
+          <option value="">— Auto from county —</option>
+          <option value="Brooklyn">Brooklyn</option>
+          <option value="Manhattan">Manhattan</option>
+          <option value="Bronx">Bronx</option>
+          <option value="Queens">Queens</option>
+          <option value="Staten Island">Staten Island</option>
+        </select>
+      </div>
+    </div>
+    <div id="bulkStatus" style="font-size:.85rem;min-height:24px"></div>
+  </div>
+  <div class="modal-footer">
+    <div class="footer-left" id="bulkCount" style="font-size:.85rem;color:var(--text-3)">0 OMOs</div>
+    <div class="footer-right">
+      <button class="btn btn-ghost" onclick="closeBulkModal()">Cancel</button>
+      <button class="btn btn-primary" id="btnBulkSave" onclick="saveBulk()">⚡ Create All</button>
+    </div>
+  </div>
 </div>
 </div>
 

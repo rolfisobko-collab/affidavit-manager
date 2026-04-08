@@ -571,8 +571,16 @@ async function save() {
     const saved = await res.json();
     editId = saved.id ?? editId;
     showToast(t('toast_saved'), 'success');
-    goTab(1);
     loadServices();
+    if (isAdmin() && currentTab === 1) {
+      // Admin saving from Outcome tab → close modal
+      closeModal();
+    } else if (currentTab === 0) {
+      // First tab save → go to Outcome tab
+      goTab(1);
+    } else {
+      // Already on tab 1 as worker → stay open
+    }
   } catch {
     showToast(t('toast_error'), 'error');
   } finally {
@@ -1196,6 +1204,68 @@ async function deleteMedia(mediaId) {
   if (!confirm(t('confirm_delete'))) return;
   await fetch(`/api/media/${mediaId}`, { method: 'DELETE' });
   await loadMedia(mediaRecordId);
+}
+
+// ── Bulk Add OMOs ──────────────────────────────────────────────────────────────
+function openBulkModal() {
+  $('bulkOmoInput').value = '';
+  $('bulkCounty').value   = '';
+  $('bulkBorough').value  = '';
+  $('bulkStatus').textContent = '';
+  $('bulkCount').textContent  = '0 OMOs';
+  $('btnBulkSave').disabled   = false;
+  $('bulkOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  $('bulkOmoInput').focus();
+  $('bulkOmoInput').oninput = () => {
+    const lines = parseBulkLines();
+    $('bulkCount').textContent = `${lines.length} OMO${lines.length !== 1 ? 's' : ''}`;
+  };
+}
+function closeBulkModal() {
+  $('bulkOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function autoBulkBorough() {
+  const b = COUNTY_BOROUGH[val('bulkCounty')] || '';
+  if (b) $('bulkBorough').value = b;
+}
+function parseBulkLines() {
+  return ($('bulkOmoInput').value || '')
+    .split(/[\n,;]+/)
+    .map(s => s.trim().toUpperCase())
+    .filter(s => s.length > 0);
+}
+async function saveBulk() {
+  const omos = parseBulkLines();
+  if (!omos.length) {
+    $('bulkStatus').innerHTML = '<span style="color:var(--danger)">Enter at least one OMO number.</span>';
+    return;
+  }
+  const btn = $('btnBulkSave');
+  btn.disabled = true;
+  btn.textContent = '…';
+  const county  = $('bulkCounty').value;
+  const borough = $('bulkBorough').value;
+  const status  = $('bulkStatus');
+  let ok = 0, fail = 0;
+  for (const omo of omos) {
+    status.textContent = `Creating ${omo}… (${ok + fail + 1}/${omos.length})`;
+    try {
+      const res = await fetch('/api/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ omo_number: omo, status: 'pending', county, borough, doc_type: 'work' }),
+      });
+      if (res.ok) ok++;
+      else fail++;
+    } catch { fail++; }
+  }
+  await loadServices();
+  status.innerHTML = `<span style="color:var(--status-work)">✅ ${ok} created${fail ? ` — ❌ ${fail} failed` : ''}</span>`;
+  btn.textContent = '⚡ Create All';
+  btn.disabled = false;
+  if (!fail) setTimeout(closeBulkModal, 1200);
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────────
