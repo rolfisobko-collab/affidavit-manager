@@ -501,6 +501,12 @@ def create_record():
     if role == "worker":
         for f in PRICE_FIELDS:
             data.pop(f, None)
+    # Mirror phone dates from attempt dates (reason 4: same visit+call dates)
+    if data.get("nowork_reason") == "4" or data.get("attempt_date1"):
+        if data.get("attempt_date1") and not data.get("phone_date1"):
+            data["phone_date1"] = data["attempt_date1"]
+        if data.get("attempt_date2") and not data.get("phone_date2"):
+            data["phone_date2"] = data["attempt_date2"]
     conn = get_connection()
     try:
         cur  = conn.cursor()
@@ -547,6 +553,12 @@ def update_record(rec_id):
     if role == "worker":
         for f in PRICE_FIELDS:
             data.pop(f, None)
+    # Mirror phone dates from attempt dates (reason 4: same visit+call dates)
+    if data.get("nowork_reason") == "4" or data.get("attempt_date1"):
+        if data.get("attempt_date1"):
+            data["phone_date1"] = data["attempt_date1"]
+        if data.get("attempt_date2"):
+            data["phone_date2"] = data["attempt_date2"]
     conn = get_connection()
     try:
         cur = conn.cursor()

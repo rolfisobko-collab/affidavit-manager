@@ -400,6 +400,14 @@ function autoBoroughFromCounty() {
   if (b) set('borough', b);
 }
 
+// ── Mirror phone dates from attempt dates (reason 4) ─────────────────────────
+function mirrorPhoneDates() {
+  const d1 = $('attempt_date1'); const d2 = $('attempt_date2');
+  const p1 = $('phone_date1');   const p2 = $('phone_date2');
+  if (p1 && d1) p1.value = d1.value;
+  if (p2 && d2) p2.value = d2.value;
+}
+
 // ── Modal open/close ───────────────────────────────────────────────────────────
 const FORM_FIELDS = [
   'omo_number', 'status', 'county', 'building_address',
@@ -532,8 +540,9 @@ async function save() {
     nowork_reason:     docType === 'nowork' ? noworkReason          : '',
     attempt_date1:     noworkReason === '4' ? val('attempt_date1')  : '',
     attempt_date2:     noworkReason === '4' ? val('attempt_date2')  : '',
-    phone_date1:       noworkReason === '4' ? val('phone_date1')    : '',
-    phone_date2:       noworkReason === '4' ? val('phone_date2')    : '',
+    // phone dates mirror attempt dates (same dates per HPD requirement)
+    phone_date1:       noworkReason === '4' ? val('attempt_date1')  : '',
+    phone_date2:       noworkReason === '4' ? val('attempt_date2')  : '',
     arrival_date:      arrivalVal,
     contractor_name:   noworkReason === '6' ? val('contractor_name') : '',
     arrival_date_4:    noworkReason === '4' ? val('arrival_date_4')  : '',
@@ -646,6 +655,25 @@ async function dlPdf(id, doc) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('Downloaded ✓', 'success');
+  } catch {
+    showToast(t('toast_error'), 'error');
+  }
+}
+
+// ── Preview PDF (admin only — opens in new tab) ────────────────────────────────
+async function previewPdf(id, doc) {
+  showToast('Generating preview…', 'info');
+  try {
+    const res = await fetch(`/api/records/${id}/pdf/${doc}`, { credentials: 'same-origin' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.error || t('toast_error'), 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    showToast('Preview ready ✓', 'success');
   } catch {
     showToast(t('toast_error'), 'error');
   }
@@ -773,8 +801,12 @@ function renderAll() {
       }
     }
 
-    // ── Print buttons: admin and notary only ──
+    // ── Print/Preview buttons: admin and notary only ──
     if (role !== 'worker') {
+      if (role === 'admin') {
+        wfBtns.push(`<button class="act-media-btn act-preview" onclick="previewPdf(${r.id},'affidavit')" title="Preview Affidavit">👁️ 📄</button>`);
+        wfBtns.push(`<button class="act-media-btn act-preview" onclick="previewPdf(${r.id},'invoice')" title="Preview Invoice">👁️ 🧾</button>`);
+      }
       wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
       wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
     }

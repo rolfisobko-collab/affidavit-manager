@@ -425,12 +425,13 @@
           </div>
           <div class="conditional-block" id="nwBlock_4">
             <div class="form-grid">
-              <div class="form-group"><label class="form-label" data-t="lbl_arrival">Date of arrival at site</label><input id="arrival_date_4" class="form-control" placeholder="MM/DD/YYYY"></div>
-              <div class="form-group"><label class="form-label" data-t="lbl_attempt1">Access attempt 1 <span class="field-hint" data-t="hint_72h">(must be 72h apart)</span></label><input id="attempt_date1" class="form-control" placeholder="MM/DD/YYYY" oninput="check72h()"></div>
-              <div class="form-group"><label class="form-label" data-t="lbl_attempt2">Access attempt 2</label><input id="attempt_date2" class="form-control" placeholder="MM/DD/YYYY" oninput="check72h()"></div>
-              <div id="warn72h" class="field-warning" style="display:none" data-t="warn_72h">⚠️ Attempts must be at least 72 hours apart (HPD requirement)</div>
-              <div class="form-group"><label class="form-label" data-t="lbl_phone1">Phone attempt 1</label><input id="phone_date1" class="form-control" placeholder="MM/DD/YYYY"></div>
-              <div class="form-group"><label class="form-label" data-t="lbl_phone2">Phone attempt 2</label><input id="phone_date2" class="form-control" placeholder="MM/DD/YYYY"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_attempt1">Visit / Call attempt 1 <span class="field-hint" data-t="hint_72h">(must be 72h apart)</span></label><input id="attempt_date1" class="form-control" placeholder="MM/DD/YYYY" oninput="check72h(); mirrorPhoneDates()"></div>
+              <div class="form-group"><label class="form-label" data-t="lbl_attempt2">Visit / Call attempt 2</label><input id="attempt_date2" class="form-control" placeholder="MM/DD/YYYY" oninput="check72h(); mirrorPhoneDates()"></div>
+              <div id="warn72h" class="field-warning full" style="display:none" data-t="warn_72h">⚠️ Attempts must be at least 72 hours apart (HPD requirement)</div>
+              <!-- phone_date1 / phone_date2 are hidden — mirrored from attempt dates in JS -->
+              <input type="hidden" id="phone_date1">
+              <input type="hidden" id="phone_date2">
+              <input type="hidden" id="arrival_date_4">
             </div>
           </div>
           <div class="conditional-block" id="nwBlock_5">
