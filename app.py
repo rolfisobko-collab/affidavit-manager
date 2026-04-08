@@ -18,38 +18,19 @@ from werkzeug.utils import secure_filename
 
 from pdf_filler import generate_pdfs
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-USE_POSTGRES = bool(DATABASE_URL)
-
-if USE_POSTGRES:
-    import psycopg2
-    import psycopg2.extras
-else:
-    import sqlite3
+# Force SQLite — Postgres migration pending
+USE_POSTGRES = False
+DATABASE_URL = ""
+import sqlite3
 
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 DB_PATH     = os.path.join(BASE_DIR, "records.db")
 MEDIA_DIR   = os.path.join(BASE_DIR, "media")
 OUTPUT_DIR  = os.path.join(BASE_DIR, "output")
 
-# ── Cloudinary (optional) ─────────────────────────────────────────────────────
-CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
-CLOUDINARY_API_KEY    = os.environ.get("CLOUDINARY_API_KEY", "")
-CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
-USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
-
-if USE_CLOUDINARY:
-    import cloudinary
-    import cloudinary.uploader
-    cloudinary.config(
-        cloud_name = CLOUDINARY_CLOUD_NAME,
-        api_key    = CLOUDINARY_API_KEY,
-        api_secret = CLOUDINARY_API_SECRET,
-        secure     = True
-    )
+# Force Blob (no Cloudinary) — media migration pending
+USE_CLOUDINARY = False
+CLOUDINARY_CLOUD_NAME = CLOUDINARY_API_KEY = CLOUDINARY_API_SECRET = ""
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "mp4", "mov", "avi", "pdf"}
 
