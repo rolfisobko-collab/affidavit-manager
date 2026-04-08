@@ -1206,66 +1206,115 @@ async function deleteMedia(mediaId) {
   await loadMedia(mediaRecordId);
 }
 
-// ── Bulk Add OMOs ──────────────────────────────────────────────────────────────
+// ── Bulk Add OMOs (PDF files) ──────────────────────────────────────────────────
+let _bulkFiles = [];
+
 function openBulkModal() {
-  $('bulkOmoInput').value = '';
-  $('bulkCounty').value   = '';
-  $('bulkBorough').value  = '';
+  _bulkFiles = [];
+  $('bulkFileList').innerHTML = '';
   $('bulkStatus').textContent = '';
-  $('bulkCount').textContent  = '0 OMOs';
+  $('bulkCount').textContent  = '0 files selected';
   $('btnBulkSave').disabled   = false;
   $('bulkOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-  $('bulkOmoInput').focus();
-  $('bulkOmoInput').oninput = () => {
-    const lines = parseBulkLines();
-    $('bulkCount').textContent = `${lines.length} OMO${lines.length !== 1 ? 's' : ''}`;
-  };
 }
 function closeBulkModal() {
   $('bulkOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  _bulkFiles = [];
 }
-function autoBulkBorough() {
-  const b = COUNTY_BOROUGH[val('bulkCounty')] || '';
-  if (b) $('bulkBorough').value = b;
+function bulkDragOver(e) {
+  e.preventDefault();
+  $('bulkDropZone').classList.add('drag-over');
 }
-function parseBulkLines() {
-  return ($('bulkOmoInput').value || '')
-    .split(/[\n,;]+/)
-    .map(s => s.trim().toUpperCase())
-    .filter(s => s.length > 0);
+function bulkDragLeave() {
+  $('bulkDropZone').classList.remove('drag-over');
+}
+function bulkDrop(e) {
+  e.preventDefault();
+  $('bulkDropZone').classList.remove('drag-over');
+  const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  bulkFilesSelected(files);
+}
+function bulkFilesSelected(files) {
+  const newFiles = [...files].filter(f => f.name.endsWith('.pdf'));
+  newFiles.forEach(f => { if (!_bulkFiles.find(x => x.name === f.name)) _bulkFiles.push(f); });
+  renderBulkFileList();
+}
+function renderBulkFileList() {
+  $('bulkCount').textContent = `${_bulkFiles.length} file${_bulkFiles.length !== 1 ? 's' : ''} selected`;
+  $('bulkFileList').innerHTML = _bulkFiles.map((f, i) => `
+    <div class="bulk-file-row" id="bfr_${i}">
+      <span class="bulk-file-icon">📄</span>
+      <span class="bulk-file-name">${esc(f.name)}</span>
+      <span class="bulk-file-status" id="bfs_${i}"></span>
+      <button class="bulk-file-remove" onclick="bulkRemoveFile(${i})">✕</button>
+    </div>`).join('');
+}
+function bulkRemoveFile(i) {
+  _bulkFiles.splice(i, 1);
+  renderBulkFileList();
 }
 async function saveBulk() {
-  const omos = parseBulkLines();
-  if (!omos.length) {
-    $('bulkStatus').innerHTML = '<span style="color:var(--danger)">Enter at least one OMO number.</span>';
+  if (!_bulkFiles.length) {
+    $('bulkStatus').innerHTML = '<span style="color:var(--danger)">Select at least one PDF.</span>';
     return;
   }
   const btn = $('btnBulkSave');
   btn.disabled = true;
   btn.textContent = '…';
-  const county  = $('bulkCounty').value;
-  const borough = $('bulkBorough').value;
-  const status  = $('bulkStatus');
   let ok = 0, fail = 0;
-  for (const omo of omos) {
-    status.textContent = `Creating ${omo}… (${ok + fail + 1}/${omos.length})`;
+
+  for (let i = 0; i < _bulkFiles.length; i++) {
+    const f   = _bulkFiles[i];
+    const row = $(`bfs_${i}`);
+    if (row) row.innerHTML = '<span style="color:var(--text-3)">⏳ parsing…</span>';
+
     try {
-      const res = await fetch('/api/records', {
+      // 1. Parse the PDF
+      const fd = new FormData();
+      fd.append('file', f);
+      const parseRes = await fetch('/api/parse-omo-pdf', { method: 'POST', body: fd });
+      if (!parseRes.ok) throw new Error('parse failed');
+      const parsed = await parseRes.json();
+
+      // 2. Create the record with parsed data
+      const createRes = await fetch('/api/records', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ omo_number: omo, status: 'pending', county, borough, doc_type: 'work' }),
+        body: JSON.stringify({
+          omo_number:       parsed.omo_number       || '',
+          county:           parsed.county           || '',
+          borough:          parsed.borough          || '',
+          building_address: parsed.building_address || '',
+          trade:            parsed.trade            || '',
+          work_start_date:  parsed.work_start_date  || '',
+          work_end_date:    parsed.work_end_date     || '',
+          rc_number:        parsed.rc_number        || '',
+          inv_desc1:        parsed.inv_desc1        || '',
+          inv_desc2:        parsed.inv_desc2        || '',
+          inv_desc3:        parsed.inv_desc3        || '',
+          inv_desc4:        parsed.inv_desc4        || '',
+          inv_desc5:        parsed.inv_desc5        || '',
+          inv_desc6:        parsed.inv_desc6        || '',
+          status:  'pending',
+          doc_type: 'work',
+        }),
       });
-      if (res.ok) ok++;
-      else fail++;
-    } catch { fail++; }
+      if (!createRes.ok) throw new Error('create failed');
+      ok++;
+      if (row) row.innerHTML = `<span style="color:var(--status-work)">✅ ${esc(parsed.omo_number || 'created')}</span>`;
+    } catch (err) {
+      fail++;
+      if (row) row.innerHTML = '<span style="color:var(--danger)">❌ failed</span>';
+    }
   }
+
   await loadServices();
-  status.innerHTML = `<span style="color:var(--status-work)">✅ ${ok} created${fail ? ` — ❌ ${fail} failed` : ''}</span>`;
-  btn.textContent = '⚡ Create All';
+  $('bulkStatus').innerHTML = `<strong style="color:var(--status-work)">✅ ${ok} imported${fail ? ` — ❌ ${fail} failed` : ''}</strong>`;
+  btn.textContent = '⚡ Import All';
   btn.disabled = false;
-  if (!fail) setTimeout(closeBulkModal, 1200);
+  if (!fail) setTimeout(closeBulkModal, 1800);
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────────
