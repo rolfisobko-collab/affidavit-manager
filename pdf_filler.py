@@ -34,8 +34,8 @@ WORK_FIELDS = {
     # nombre_en_record  : (nombre_campo_pdf, índice_si_duplicado)
     "omo_number"        : "1",     # header pág 1, ítem 3 y header pág 2 (mismo nombre → sync)
     # county ('2') lo completa la escribana — NO se rellena desde el sistema
-    "date_directed"     : "4",
-    "building_address"  : "5",
+    # date_directed (campo '4') se completa a mano — NO se rellena desde el sistema
+    # building_address (campo '5') se completa a mano — NO se rellena desde el sistema
     "work_start_date"   : "6",     # "beginning on ___"
     "work_end_date"     : "7",     # "completed on ___"
     # work_contractor_name: campo '3' ya tiene el texto del juramento hardcodeado en el template — NO se pisa
@@ -52,7 +52,7 @@ WORK_FIELDS = {
 NOWORK_FIELDS = {
     "omo_number"        : "1",     # header + ítem 2 OMO# (sync automático)
     # county ('2') lo completa la escribana — NO se rellena desde el sistema
-    "building_address"  : "23",    # "to go to building located at ___"
+    # building_address (campo '23') se completa a mano — NO se rellena desde el sistema
     "service_charge"    : "4",
     "inacc_reason"      : "5",     # línea 1 de inaccesibilidad
     "inacc_reason2"     : "6",     # línea 2 de inaccesibilidad
@@ -163,13 +163,6 @@ def _build_affidavit_values(record: dict) -> dict:
 
         if val:
             values[pdf_key] = val
-
-    # Append borough to building_address in affidavit
-    addr_pdf_key = fields.get("building_address")
-    if addr_pdf_key and values.get(addr_pdf_key):
-        borough = (record.get("borough") or "").strip()
-        if borough:
-            values[addr_pdf_key] = f"{values[addr_pdf_key]}, {borough}"
 
     return values
 
