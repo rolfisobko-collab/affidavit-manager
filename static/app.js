@@ -665,6 +665,14 @@ function applyRoleUI() {
   document.querySelectorAll('.worker-notary-only').forEach(el => {
     el.style.display = (role !== 'admin') ? '' : 'none';
   });
+  // Workers don't see submitted/paid pipeline nodes
+  ['submitted','paid'].forEach(s => {
+    const node = document.querySelector(`.ps-node[data-s="${s}"]`);
+    const arrow = node?.previousElementSibling;
+    if (node)  node.style.display  = (role === 'worker') ? 'none' : '';
+    if (arrow && arrow.classList.contains('ps-arrow'))
+      arrow.style.display = (role === 'worker') ? 'none' : '';
+  });
 }
 
 // ── Sidebar page navigation ────────────────────────────────────────────────────
@@ -757,9 +765,11 @@ function renderAll() {
       }
     }
 
-    // ── Print buttons always visible ──
-    wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
-    wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
+    // ── Print buttons: admin and notary only ──
+    if (role !== 'worker') {
+      wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'affidavit')" title="Print Affidavit">📄 ${t('action_aff')}</button>`);
+      wfBtns.push(`<button class="act-media-btn" onclick="dlPdf(${r.id},'invoice')" title="Print Invoice">🧾 ${t('action_inv')}</button>`);
+    }
 
     const stripeClass = `stripe-${r.status === 'work_performed' ? 'work' : r.status === 'no_work_performed' ? 'nowork' : r.status || 'pending'}`;
 
@@ -780,6 +790,7 @@ function renderAll() {
       <div class="card-actions">
         ${wfBtns.join('')}
         <button class="act-media-btn" onclick="openMediaModal(${r.id},'${esc(r.omo_number||r.id)}')">📷 Media</button>
+        ${role !== 'notary' ? `<button class="act-edit-btn" onclick="openModal(services.find(s=>s.id===${r.id}))">✏️ ${role === 'worker' ? 'Edit OMO' : 'Edit'}</button>` : ''}
         <button class="act-more-btn" onclick="toggleCtx(event,${r.id})" title="More actions">•••</button>
       </div>
     </div>`;
@@ -1123,39 +1134,61 @@ async function loadMedia(recId) {
   const files = await res.json();
   const grid  = $('mediaGrid');
   if (!files.length) {
-    grid.innerHTML = '<p style="color:var(--text-3);font-size:.85rem;padding:8px 0">No media uploaded yet.</p>';
+    grid.innerHTML = '<p style="color:var(--text-3);font-size:.9rem;padding:16px 0;text-align:center">📭 No media uploaded yet.</p>';
     return;
   }
   grid.innerHTML = files.map(f => {
     const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(f.filename);
     const isVid = /\.(mp4|mov|avi)$/i.test(f.filename);
     const url   = `/media/${recId}/${f.filename}`;
-    const thumb = isImg
-      ? `<img src="${url}" loading="lazy" alt="${esc(f.orig_name||f.filename)}">`
-      : `<div class="media-item-icon">${isVid ? '🎥' : '📄'}</div>`;
+    const preview = isImg
+      ? `<img src="${url}" loading="lazy" alt="${esc(f.orig_name||f.filename)}" onclick="openMediaLightbox('${url}','image')">`
+      : isVid
+        ? `<video src="${url}" controls playsinline preload="metadata" class="media-video-thumb"></video>`
+        : `<div class="media-item-icon" onclick="window.open('${url}','_blank')">📄</div>`;
     const adminDel = isAdmin()
-      ? `<button class="media-btn-del" onclick="deleteMedia(${f.id})">🗑</button>` : '';
+      ? `<button class="media-btn-del" onclick="deleteMedia(${f.id})" title="Delete">🗑</button>` : '';
     return `
     <div class="media-item">
-      ${thumb}
-      <div class="media-item-overlay">
-        <a href="${url}" target="_blank" style="color:#fff;font-size:.8rem;font-weight:600">View</a>
-        ${adminDel}
+      ${preview}
+      <div class="media-item-footer">
+        <span class="media-item-name" title="${esc(f.orig_name||f.filename)}">${esc(f.orig_name||f.filename)}</span>
+        <div class="media-item-actions">
+          <a class="media-btn-dl" href="${url}" download="${esc(f.orig_name||f.filename)}" title="Download">⬇️</a>
+          ${adminDel}
+        </div>
       </div>
-      <div class="media-item-name">${esc(f.orig_name||f.filename)}</div>
     </div>`;
   }).join('');
 }
 
+function openMediaLightbox(url, type) {
+  const lb = document.createElement('div');
+  lb.className = 'media-lightbox';
+  lb.innerHTML = `<div class="media-lb-backdrop" onclick="this.parentElement.remove()"></div>
+    <div class="media-lb-content">
+      <button class="media-lb-close" onclick="this.closest('.media-lightbox').remove()">✕</button>
+      <img src="${url}" style="max-width:100%;max-height:85vh;border-radius:8px;display:block">
+    </div>`;
+  document.body.appendChild(lb);
+}
+
 async function handleMediaFiles(files) {
   if (!files || !files.length) return;
+  let ok = 0, fail = 0;
   for (const file of files) {
+    showToast(`⏳ Uploading ${file.name}…`, 'info');
     const fd = new FormData();
     fd.append('file', file);
     const res = await fetch(`/api/records/${mediaRecordId}/media`, { method:'POST', body: fd });
-    if (!res.ok) { showToast(`Failed: ${file.name}`, 'error'); }
+    if (res.ok) {
+      ok++;
+      showToast(`✅ ${file.name} uploaded!`, 'success');
+    } else {
+      fail++;
+      showToast(`❌ Failed: ${file.name}`, 'error');
+    }
   }
-  showToast(t('toast_saved'), 'success');
   await loadMedia(mediaRecordId);
 }
 
