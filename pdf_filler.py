@@ -35,7 +35,7 @@ WORK_FIELDS = {
     "omo_number"        : "1",     # header pág 1, ítem 3 y header pág 2 (mismo nombre → sync)
     # county ('2') lo completa la escribana — NO se rellena desde el sistema
     # date_directed (campo '4') se completa a mano — NO se rellena desde el sistema
-    # building_address (campo '5') se completa a mano — NO se rellena desde el sistema
+    "building_address"  : "5",     # "building located at ___"
     "work_start_date"   : "6",     # "beginning on ___"
     "work_end_date"     : "7",     # "completed on ___"
     # work_contractor_name: campo '3' ya tiene el texto del juramento hardcodeado en el template — NO se pisa
@@ -52,7 +52,7 @@ WORK_FIELDS = {
 NOWORK_FIELDS = {
     "omo_number"        : "1",     # header + ítem 2 OMO# (sync automático)
     # county ('2') lo completa la escribana — NO se rellena desde el sistema
-    # building_address (campo '23') se completa a mano — NO se rellena desde el sistema
+    "building_address"  : "23",    # "building located at ___"
     "service_charge"    : "4",
     "inacc_reason"      : "5",     # línea 1 de inaccesibilidad
     "inacc_reason2"     : "6",     # línea 2 de inaccesibilidad
