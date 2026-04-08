@@ -402,7 +402,7 @@ function autoBoroughFromCounty() {
 
 // ── Modal open/close ───────────────────────────────────────────────────────────
 const FORM_FIELDS = [
-  'omo_number', 'status', 'county', 'building_address', 'date_directed',
+  'omo_number', 'status', 'county', 'building_address',
   'work_location_apt', 'trade', 'borough',
   'work_start_date', 'work_end_date',
   'signer_name',
@@ -513,7 +513,6 @@ async function save() {
     omo_number:       val('omo_number'),
     county:           val('county'),
     building_address: val('building_address'),
-    date_directed:    val('date_directed'),
     work_location_apt:val('work_location_apt'),
     trade:            val('trade'),
     borough:          val('borough'),
@@ -569,9 +568,11 @@ async function save() {
       body:    JSON.stringify(data),
     });
     if (!res.ok) throw new Error();
+    const saved = await res.json();
+    editId = saved.id ?? editId;
     showToast(t('toast_saved'), 'success');
-    closeModal();
-    await loadServices();
+    goTab(1);
+    loadServices();
   } catch {
     showToast(t('toast_error'), 'error');
   } finally {
@@ -898,7 +899,6 @@ async function importOmoPdf(input) {
       borough:          'borough',
       county:           'county',
       trade:            'trade',
-      date_directed:    'date_directed',
       work_end_date:    'work_end_date',
       rc_number:        'rc_number',
       inv_desc1:        'inv_desc1',

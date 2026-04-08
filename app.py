@@ -935,11 +935,6 @@ def parse_hpd_omo_pdf(file_bytes):
         elif re.search(r'\bStaten Island\b', text, re.I):
             result["borough"] = "Staten Island"; result["county"] = "Richmond"
 
-    # ── Work Start Date  →  inline "Work Start Date: 2/19/26" ──
-    v = inline_val(r'Work\s+Start\s+Date')
-    if v:
-        result["date_directed"] = v
-
     # ── Work Completion Date  →  línea anterior a "Work Completion Date:" ──
     v = prev_val(r'Work\s+Completion\s+Date\s*:?$')
     if not v:

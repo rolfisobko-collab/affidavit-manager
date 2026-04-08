@@ -164,6 +164,13 @@ def _build_affidavit_values(record: dict) -> dict:
         if val:
             values[pdf_key] = val
 
+    # Append borough to building_address in affidavit
+    addr_pdf_key = fields.get("building_address")
+    if addr_pdf_key and values.get(addr_pdf_key):
+        borough = (record.get("borough") or "").strip()
+        if borough:
+            values[addr_pdf_key] = f"{values[addr_pdf_key]}, {borough}"
+
     return values
 
 
